@@ -649,12 +649,14 @@
                 "./auth.js": "./assets/js/auth.js",
                 "./auth-utils.js": "./assets/js/auth-utils.js",
                 "./integrations.js": "./assets/js/integrations.js",
-                "./integrations-ui.js": "./assets/js/integrations-ui.js"
+                "./integrations-ui.js": "./assets/js/integrations-ui.js",
+                "./login-check.js": "./assets/js/login-check.js"
             }
         }
     </script>
     <script type="module">
         import './assets/js/main.js';
+        import './assets/js/login-check.js';
         import IntegrationsUI from './assets/js/integrations-ui.js';
         
         document.addEventListener('DOMContentLoaded', function() {

@@ -120,11 +120,15 @@
                 "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
                 "./supabase.js": "./assets/js/supabase.js",
                 "./auth.js": "./assets/js/auth.js",
-                "./auth-utils.js": "./assets/js/auth-utils.js"
+                "./auth-utils.js": "./assets/js/auth-utils.js",
+                "./login-check.js": "./assets/js/login-check.js"
             }
         }
     </script>
-    <script type="module" src="assets/js/main.js"></script>
+    <script type="module">
+        import './assets/js/main.js';
+        import './assets/js/login-check.js';
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Inicialização do tema
