@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  node-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: whatsapp-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/node:/app/src/node
+      - whatsapp-auth:/app/.wwebjs_auth
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - whatsapp-network
+
+  php-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.apache
+    container_name: whatsapp-web
+    restart: unless-stopped
+    ports:
+      - "9030:80"
+    volumes:
+      - ./src/php/html:/var/www/html
+    depends_on:
+      - node-api
+    networks:
+      - whatsapp-network
+
+networks:
+  whatsapp-network:
+    driver: bridge
+
+volumes:
+  whatsapp-auth:
+    driver: local

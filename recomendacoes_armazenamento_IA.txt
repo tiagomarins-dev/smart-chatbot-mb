@@ -1,0 +1,47 @@
+# Recomendações para Armazenamento de Dados para IA
+
+Para um sistema que armazena conversas, interações e dados de leads para análise contínua por IA, recomendo esta arquitetura:
+
+### Melhor abordagem para armazenamento
+
+**Armazenamento primário: PostgreSQL no Supabase**
+- Excelente para dados estruturados (perfis, metadados, categorização)
+- Suporte nativo a JSON/JSONB para dados semi-estruturados
+- Extensão pgvector para embeddings e busca semântica
+- Fácil integração com ferramentas de IA
+
+**Armazenamento complementar:**
+- **Vector Database** (Pinecone, Weaviate ou pgvector no próprio Supabase) para busca semântica avançada
+- **Redis** para cache e dados de acesso frequente
+
+### Estrutura de dados sugerida
+
+1. **Tabela de Leads/Usuários**
+   - Dados demográficos e contato
+   - Preferências e segmentação
+   - Metadados de interação (frequência, engajamento)
+
+2. **Tabela de Conversas**
+   - Histórico completo de mensagens
+   - Timestamps e metadados
+   - Relações com leads/usuários
+
+3. **Tabela de Análises**
+   - Embeddings/vetores pré-calculados
+   - Sentimentos e tópicos detectados
+   - Tags e classificações
+
+4. **Tabela de Respostas/Formulários**
+   - Respostas a perguntas específicas
+   - Dados de pesquisas
+   - Feedback estruturado
+
+### Considerações importantes
+
+1. **Escalabilidade**: A arquitetura combinada permite expansão sem redesenho
+2. **Acesso em tempo real**: Supabase oferece subscriptions em tempo real
+3. **Processamento assíncrono**: Implementar filas para análise de mensagens em background
+4. **Privacidade/LGPD**: Design cuidadoso para compliance, anonimização quando necessário
+5. **Latência**: Camada de cache para reduzir tempo de acesso da IA
+
+Esta estrutura oferece o melhor equilíbrio entre facilidade de uso, desempenho e flexibilidade para análise de IA contínua, permitindo tanto consultas estruturadas quanto análise semântica avançada dos dados de conversas.

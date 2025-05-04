@@ -1,0 +1,32 @@
+FROM php:8.2-apache
+
+# Instalar extensões PHP necessárias
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    zlib1g-dev \
+    libicu-dev \
+    g++ \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl \
+    && docker-php-ext-install gd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configurar Apache
+RUN a2enmod rewrite
+RUN a2enmod headers
+RUN a2enmod ssl
+RUN service apache2 restart
+
+# Definir diretório de trabalho
+WORKDIR /var/www/html
+
+# Copiar os arquivos PHP
+COPY src/php/html/ /var/www/html/
+
+# Configurar permissões
+RUN chown -R www-data:www-data /var/www/html
+RUN chmod -R 755 /var/www/html
+
+# Porta exposta
+EXPOSE 80
