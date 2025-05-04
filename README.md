@@ -1,21 +1,29 @@
-# WhatsApp Web Manager
+# Smart-ChatBox
 
-Sistema completo para gerenciamento de WhatsApp Web com interface amigável para envio e recebimento de mensagens.
+Sistema completo para gerenciamento de WhatsApp Web com interface amigável para envio e recebimento de mensagens, com autenticação via Supabase.
 
 ## Funcionalidades
 
-- Conexão com WhatsApp via QR Code
-- Visualização em tempo real de mensagens recebidas e enviadas
-- Interface de chat organizada por contatos
-- Envio de mensagens direto da interface web
-- Captura de mensagens enviadas de outros dispositivos
-- Identificação visual de diferentes tipos de mensagens
-- Carregamento automático do histórico de conversas
+- **Autenticação**:
+  - Login com email/senha
+  - Registro de novos usuários
+  - Persistência de sessão
+  - Proteção de rotas restritas
+  
+- **WhatsApp**:
+  - Conexão com WhatsApp via QR Code
+  - Visualização em tempo real de mensagens recebidas e enviadas
+  - Interface de chat organizada por contatos
+  - Envio de mensagens direto da interface web
+  - Captura de mensagens enviadas de outros dispositivos
+  - Identificação visual de diferentes tipos de mensagens
+  - Carregamento automático do histórico de conversas
 
 ## Tecnologias
 
 - **Backend**: Node.js, Express, WhatsApp Web.js
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap 5
+- **Autenticação**: Supabase
 - **Contêineres**: Docker, Docker Compose
 - **Servidor Web**: Apache com PHP
 
@@ -39,6 +47,7 @@ Sistema completo para gerenciamento de WhatsApp Web com interface amigável para
 
 - Docker
 - Docker Compose
+- Conta no Supabase (https://supabase.com)
 
 ### Instalação e execução
 
@@ -48,17 +57,73 @@ git clone https://github.com/seu-usuario/smart-chatbot-mb.git
 cd smart-chatbot-mb
 ```
 
-2. Inicie os contêineres:
+2. Configure as credenciais do Supabase:
+   - Crie um arquivo `.env` na raiz do projeto
+   - Adicione as seguintes variáveis:
+   ```
+   SUPABASE_URL=https://sua-url-supabase.supabase.co
+   SUPABASE_ANON_KEY=sua-chave-anonima-supabase
+   ```
+
+3. Configure o banco de dados Supabase:
+   - Crie uma tabela `profiles` para armazenar dados de usuários:
+   ```sql
+   create table public.profiles (
+     id uuid references auth.users on delete cascade not null primary key,
+     name text,
+     avatar_url text,
+     created_at timestamp with time zone default now() not null,
+     updated_at timestamp with time zone default now() not null
+   );
+
+   -- Habilitar RLS (Row Level Security)
+   alter table public.profiles enable row level security;
+
+   -- Criar policy para permitir acesso ao próprio perfil
+   create policy "Usuários podem visualizar seus próprios perfis"
+     on public.profiles
+     for select
+     using (auth.uid() = id);
+
+   create policy "Usuários podem inserir seus próprios perfis"
+     on public.profiles
+     for insert
+     with check (auth.uid() = id);
+
+   create policy "Usuários podem atualizar seus próprios perfis"
+     on public.profiles
+     for update
+     using (auth.uid() = id);
+
+   -- Função para criar perfil automaticamente após registro
+   create or replace function public.handle_new_user()
+   returns trigger as $$
+   begin
+     insert into public.profiles (id, name, avatar_url)
+     values (new.id, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'avatar_url');
+     return new;
+   end;
+   $$ language plpgsql security definer;
+
+   -- Trigger para executar após o registro de um novo usuário
+   create trigger on_auth_user_created
+     after insert on auth.users
+     for each row execute procedure public.handle_new_user();
+   ```
+
+4. Inicie os contêineres:
 ```bash
 docker-compose up -d
 ```
 
-3. Acesse a interface web:
+5. Acesse a interface web:
 ```
 http://localhost:9030
 ```
 
-4. Escaneie o QR Code com seu WhatsApp para conectar.
+6. Crie uma conta ou faça login com suas credenciais.
+
+7. Depois de autenticado, escaneie o QR Code com seu WhatsApp para conectar.
 
 ### Uso
 

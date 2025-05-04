@@ -54,15 +54,26 @@
                         <i class="fas fa-sun theme-switch-icon" id="theme-icon"></i>
                     </div>
                     
-                    <div class="dropdown">
+                    <!-- Usuário não autenticado -->
+                    <div class="non-auth-required">
+                        <a href="login.php" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login
+                        </a>
+                        <a href="register.php" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-1"></i> Cadastro
+                        </a>
+                    </div>
+                    
+                    <!-- Usuário autenticado - Dropdown -->
+                    <div class="dropdown auth-required d-none">
                         <button class="btn dropdown-toggle user-dropdown" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i> Minha Conta
+                            <i class="fas fa-user-circle me-1"></i> <span class="user-dropdown-text">Minha Conta</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>Perfil</a></li>
                             <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configurações</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </div>
                 </div>
@@ -72,7 +83,31 @@
 
     <!-- Conteúdo Principal -->
     <div class="container-fluid main-container">
-        <div class="row mt-4">
+        <!-- Mensagem para usuários não autenticados -->
+        <div class="row mt-4 non-auth-required">
+            <div class="col-12">
+                <div class="card fade-in">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fab fa-whatsapp display-1 text-primary"></i>
+                        </div>
+                        <h2 class="mb-3">Bem-vindo ao Smart-ChatBox</h2>
+                        <p class="lead mb-4">Uma plataforma inteligente para gerenciar suas conversas do WhatsApp.</p>
+                        <div class="d-grid gap-2 col-md-6 mx-auto">
+                            <a href="login.php" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i> Entrar na plataforma
+                            </a>
+                            <a href="register.php" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus me-2"></i> Criar uma conta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo principal para usuários autenticados -->
+        <div class="row mt-4 auth-required d-none">
             <!-- Card de Status do WhatsApp -->
             <div class="col-md-6 mb-4">
                 <div class="card fade-in h-100">
@@ -221,6 +256,18 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
+                "./supabase.js": "./assets/js/supabase.js",
+                "./auth.js": "./assets/js/auth.js",
+                "./auth-utils.js": "./assets/js/auth-utils.js"
+            }
+        }
+    </script>
+    <script type="module" src="assets/js/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Configuração da API
@@ -244,13 +291,15 @@
             const lastUpdate = document.getElementById('last-update');
             
             // Elementos do modal de nova mensagem
-            const newMessageModal = new bootstrap.Modal(document.getElementById('newMessageModal'));
+            const newMessageModalElement = document.getElementById('newMessageModal');
+            const newMessageModal = newMessageModalElement ? new bootstrap.Modal(newMessageModalElement) : null;
             const sendMessageForm = document.getElementById('send-message-form');
             const messageStatus = document.getElementById('message-status');
             const sendMessageBtn = document.getElementById('send-message-btn');
             
             // Elementos do offcanvas de chat
-            const chatOffcanvas = new bootstrap.Offcanvas(document.getElementById('chatOffcanvas'));
+            const chatOffcanvasElement = document.getElementById('chatOffcanvas');
+            const chatOffcanvas = chatOffcanvasElement ? new bootstrap.Offcanvas(chatOffcanvasElement) : null;
             const chatOffcanvasNumber = document.getElementById('chatOffcanvasNumber');
             const offcanvasMessagesList = document.getElementById('offcanvas-messages-list');
             const offcanvasSendForm = document.getElementById('offcanvas-send-form');
@@ -281,12 +330,14 @@
                 const savedTheme = localStorage.getItem('smartchatbox-theme') || 'light';
                 document.documentElement.setAttribute('data-bs-theme', savedTheme);
                 
-                if (savedTheme === 'dark') {
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                } else {
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
+                if (themeIcon) {
+                    if (savedTheme === 'dark') {
+                        themeIcon.classList.remove('fa-sun');
+                        themeIcon.classList.add('fa-moon');
+                    } else {
+                        themeIcon.classList.remove('fa-moon');
+                        themeIcon.classList.add('fa-sun');
+                    }
                 }
             }
             
@@ -298,12 +349,14 @@
                 document.documentElement.setAttribute('data-bs-theme', newTheme);
                 localStorage.setItem('smartchatbox-theme', newTheme);
                 
-                if (newTheme === 'dark') {
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                } else {
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
+                if (themeIcon) {
+                    if (newTheme === 'dark') {
+                        themeIcon.classList.remove('fa-sun');
+                        themeIcon.classList.add('fa-moon');
+                    } else {
+                        themeIcon.classList.remove('fa-moon');
+                        themeIcon.classList.add('fa-sun');
+                    }
                 }
             }
             
