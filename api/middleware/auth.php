@@ -72,6 +72,29 @@ function authenticateApiKey($requiredScope = null) {
     $dbConfig = require __DIR__ . '/../config/database.php';
     
     try {
+        // DEBUG: Registrar informações de conexão
+        $connectionInfo = [
+            'host' => $dbConfig['host'],
+            'port' => $dbConfig['port'],
+            'database' => $dbConfig['database'],
+            'username' => $dbConfig['username'],
+            'password_length' => strlen($dbConfig['password']),
+            'password_start' => substr($dbConfig['password'], 0, 5) . '...',
+        ];
+        error_log('DEBUG - Tentando conectar ao PostgreSQL: ' . json_encode($connectionInfo));
+        
+        // DEBUG: Verificar variáveis de ambiente
+        error_log('DEBUG - Variáveis de ambiente: SUPABASE_SERVICE_ROLE_KEY=' . 
+            (getenv('SUPABASE_SERVICE_ROLE_KEY') ? 'definida' : 'não definida') . 
+            ', SUPABASE_JWT_SECRET=' . 
+            (getenv('SUPABASE_JWT_SECRET') ? 'definida' : 'não definida'));
+        
+        // DEBUG: Verificar configuração do Supabase
+        error_log('DEBUG - Configuração do Supabase: service_role_key=' . 
+            (!empty($config['service_role_key']) ? 'definida' : 'não definida') . 
+            ', jwt_secret=' . 
+            (!empty($config['jwt_secret']) ? 'definida' : 'não definida'));
+        
         $dsn = sprintf(
             'pgsql:host=%s;port=%s;dbname=%s;user=%s;password=%s', 
             $dbConfig['host'], 
@@ -80,6 +103,16 @@ function authenticateApiKey($requiredScope = null) {
             $dbConfig['username'], 
             $dbConfig['password']
         );
+        
+        // DEBUG: Registrar DSN (sem a senha)
+        $safeDsn = sprintf(
+            'pgsql:host=%s;port=%s;dbname=%s;user=%s', 
+            $dbConfig['host'], 
+            $dbConfig['port'], 
+            $dbConfig['database'], 
+            $dbConfig['username']
+        );
+        error_log('DEBUG - String de conexão DSN: ' . $safeDsn);
         $pdo = new PDO($dsn);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
@@ -167,9 +200,73 @@ function authenticateApiKey($requiredScope = null) {
             'log_id' => $logId,
         ];
     } catch (PDOException $e) {
-        // Registrar erro em log, mas não expor detalhes sensíveis
-        error_log('Erro ao autenticar API Key: ' . $e->getMessage());
-        sendResponse(500, errorResponse(500, 'Erro interno de autenticação.', 'AUTH_ERROR'));
+        // Registrar erro em log com informações detalhadas para debug
+        error_log('DEBUG - Erro ao autenticar API Key: ' . $e->getMessage());
+        error_log('DEBUG - Código de erro PDO: ' . $e->getCode());
+        error_log('DEBUG - Pilha de chamadas: ' . $e->getTraceAsString());
+        
+        // Verificar tipo específico de erro
+        $errorCode = $e->getCode();
+        if ($errorCode == '08006') {
+            error_log('DEBUG - Erro de timeout na conexão. Verifique se o host é acessível e se as credenciais estão corretas.');
+            sendResponse(500, errorResponse(500, 'Timeout na conexão com o banco de dados. Tente novamente mais tarde.', 'DB_TIMEOUT'));
+        } else if ($errorCode == '28P01') {
+            error_log('DEBUG - Erro de autenticação no banco. A senha (SUPABASE_SERVICE_ROLE_KEY) pode estar incorreta.');
+            sendResponse(500, errorResponse(500, 'Erro de autenticação no banco de dados.', 'DB_AUTH_ERROR'));
+        } else if (strpos($e->getMessage(), 'password') !== false) {
+            error_log('DEBUG - Problema com a senha do banco de dados.');
+            sendResponse(500, errorResponse(500, 'Erro de autenticação no banco de dados.', 'DB_PASSWORD_ERROR'));
+        } else {
+            // Resposta genérica para outros erros
+            sendResponse(500, errorResponse(500, 'Erro interno de autenticação.', 'AUTH_ERROR'));
+        }
         exit;
     }
+}
+
+/**
+ * Função principal de autenticação
+ * Tenta autenticar usando JWT ou API Key
+ * 
+ * @return array Dados do usuário autenticado
+ */
+function authenticate() {
+    // Verificar cabeçalhos para determinar o método de autenticação
+    $headers = getallheaders();
+    
+    // Tentar autenticar via API Key primeiro
+    if (isset($headers['X-API-Key'])) {
+        $apiAuthResult = authenticateApiKey();
+        
+        if ($apiAuthResult) {
+            return [
+                'authenticated' => true,
+                'method' => 'api_key',
+                'user_id' => $apiAuthResult['user_id'],
+                'email' => $apiAuthResult['email'],
+                'api_key_id' => $apiAuthResult['api_key_id'],
+                'log_id' => $apiAuthResult['log_id']
+            ];
+        }
+    }
+    
+    // Se não houver API Key, tentar via JWT
+    $jwtAuthResult = authenticateJwt(false);
+    
+    if ($jwtAuthResult) {
+        return [
+            'authenticated' => true,
+            'method' => 'jwt',
+            'user_id' => $jwtAuthResult['user_id'],
+            'email' => $jwtAuthResult['email'],
+            'role' => $jwtAuthResult['role'],
+            'exp' => $jwtAuthResult['exp']
+        ];
+    }
+    
+    // Nenhum método de autenticação válido
+    return [
+        'authenticated' => false,
+        'error' => 'Autenticação necessária'
+    ];
 }

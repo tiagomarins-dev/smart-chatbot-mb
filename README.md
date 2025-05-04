@@ -63,7 +63,12 @@ cd smart-chatbot-mb
    ```
    SUPABASE_URL=https://sua-url-supabase.supabase.co
    SUPABASE_ANON_KEY=sua-chave-anonima-supabase
+   SUPABASE_SERVICE_ROLE_KEY=sua-chave-service-role-supabase
+   SUPABASE_JWT_SECRET=seu-jwt-secret-supabase
    ```
+   - As chaves `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_JWT_SECRET` são obrigatórias para autenticação via API Key e JWT
+   - Você pode obter o `SUPABASE_JWT_SECRET` nas configurações API do seu projeto Supabase (JWT Settings)
+   - A `SUPABASE_SERVICE_ROLE_KEY` está disponível na seção API do projeto Supabase (Project API Keys)
 
 3. Configure o banco de dados Supabase:
    - Crie uma tabela `profiles` para armazenar dados de usuários:

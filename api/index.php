@@ -78,6 +78,12 @@ if (strpos($path, 'v1/') === 0) {
     }
 }
 
+// Rota de documentação
+if ($endpoint === 'docs' || $endpoint === 'documentation') {
+    require_once __DIR__ . '/docs.php';
+    exit;
+}
+
 // Rota padrão (status da API)
 if ($endpoint === '' || $endpoint === 'status') {
     // Informações básicas da API
@@ -86,12 +92,13 @@ if ($endpoint === '' || $endpoint === 'status') {
         'version' => '1.0.0',
         'status' => 'online',
         'timestamp' => date('Y-m-d\TH:i:s\Z'),
-        'documentation' => 'https://github.com/tiagomarins-dev/smart-chatbot-mb/docs',
+        'documentation' => '../api-docs.php',
         'endpoints' => [
             '/api/v1/auth',
             '/api/v1/messages',
             '/api/v1/contacts',
             '/api/v1/webhooks',
+            '/api/v1/companies',
             '/api/v1/status',
         ],
     ];

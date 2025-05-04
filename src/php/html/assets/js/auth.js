@@ -11,6 +11,8 @@ class AuthService {
       });
       
       if (error) throw error;
+      // Atualizar o estado de autenticação no sessionStorage
+      sessionStorage.setItem('isAuthenticated', 'true');
       return { user: data.user, session: data.session };
     } catch (error) {
       console.error('Erro no login:', error.message);
@@ -42,6 +44,8 @@ class AuthService {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      // Limpar o estado de autenticação no sessionStorage
+      sessionStorage.removeItem('isAuthenticated');
       return true;
     } catch (error) {
       console.error('Erro no logout:', error.message);
@@ -76,12 +80,21 @@ class AuthService {
   // Verificar se o usuário está autenticado
   async isAuthenticated() {
     const session = await this.getSession();
-    return !!session;
+    const isAuth = !!session;
+    // Atualizar o estado de autenticação no sessionStorage
+    sessionStorage.setItem('isAuthenticated', isAuth.toString());
+    return isAuth;
   }
 
   // Configurar listener para mudanças de autenticação
   onAuthStateChange(callback) {
     return supabase.auth.onAuthStateChange((event, session) => {
+      // Atualizar o estado de autenticação no sessionStorage com base no evento
+      if (event === 'SIGNED_IN') {
+        sessionStorage.setItem('isAuthenticated', 'true');
+      } else if (event === 'SIGNED_OUT') {
+        sessionStorage.setItem('isAuthenticated', 'false');
+      }
       callback(event, session);
     });
   }

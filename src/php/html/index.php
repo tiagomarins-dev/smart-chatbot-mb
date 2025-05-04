@@ -19,6 +19,22 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Carregamento antecipado dos scripts de autenticação -->
+    <script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
+                "./supabase.js": "./assets/js/supabase.js",
+                "./auth.js": "./assets/js/auth.js",
+                "./login-check.js": "./assets/js/login-check.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import './assets/js/login-check.js';
+    </script>
 </head>
 <body>
     <!-- Navbar Fixa -->
@@ -39,16 +55,19 @@
                         <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-building me-1"></i> Empresas</a>
+                        <a class="nav-link" href="empresas.php"><i class="fas fa-building me-1"></i> Empresas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-project-diagram me-1"></i> Projetos</a>
+                        <a class="nav-link" href="projetos.php"><i class="fas fa-project-diagram me-1"></i> Projetos</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#"><i class="fas fa-users me-1"></i> Leads</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="integracoes.php"><i class="fas fa-plug me-1"></i> Integrações</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="api-docs.php"><i class="fas fa-book me-1"></i> API Docs</a>
                     </li>
                 </ul>
                 
@@ -260,21 +279,15 @@
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
-                "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
-                "./supabase.js": "./assets/js/supabase.js",
-                "./auth.js": "./assets/js/auth.js",
-                "./auth-utils.js": "./assets/js/auth-utils.js",
-                "./login-check.js": "./assets/js/login-check.js"
+                "./auth-utils.js": "./assets/js/auth-utils.js"
             }
         }
     </script>
     <script type="module">
         import './assets/js/main.js';
-        import './assets/js/login-check.js';
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {

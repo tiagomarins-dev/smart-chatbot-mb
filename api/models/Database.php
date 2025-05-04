@@ -216,4 +216,55 @@ class Database {
     public static function rollback() {
         return self::getInstance()->rollBack();
     }
+    
+    /**
+     * Obtém um cliente de conexão com o Supabase
+     * 
+     * @param string $useKey Tipo de chave a ser usada: 'anon' ou 'service_role'
+     * @return array|object Configuração ou cliente Supabase dependendo do ambiente
+     */
+    public static function getSupabaseClient($useKey = 'service_role') {
+        $config = require __DIR__ . '/../config/supabase.php';
+        
+        // Verificar se as credenciais necessárias estão disponíveis
+        if (empty($config['service_role_key'])) {
+            error_log('ERRO: SUPABASE_SERVICE_ROLE_KEY não está definida no arquivo .env');
+            throw new Exception('Configuração do Supabase incompleta: SUPABASE_SERVICE_ROLE_KEY não definida');
+        }
+        
+        if (empty($config['jwt_secret'])) {
+            error_log('ERRO: SUPABASE_JWT_SECRET não está definida no arquivo .env');
+            throw new Exception('Configuração do Supabase incompleta: SUPABASE_JWT_SECRET não definida');
+        }
+        
+        // Retornar configuração para uso com PDO
+        $configArray = [
+            'url' => $config['url'],
+            'key' => $useKey === 'service_role' ? $config['service_role_key'] : $config['key'],
+            'service_role_key' => $config['service_role_key'],
+            'jwt_secret' => $config['jwt_secret'],
+            'project_id' => $config['project_id'],
+            'host' => parse_url($config['url'], PHP_URL_HOST),
+            'port' => 5432,
+            'database' => 'postgres',
+            'username' => 'postgres',
+            'password' => $config['service_role_key']
+        ];
+        
+        // Verificar se a biblioteca Supabase PHP está instalada
+        if (class_exists('\\Supabase\\Client')) {
+            try {
+                // Criar e retornar um cliente Supabase
+                $key = $useKey === 'service_role' ? $config['service_role_key'] : $config['key'];
+                $client = new \Supabase\Client($config['url'], $key);
+                return $client;
+            } catch (\Exception $e) {
+                error_log('Erro ao criar cliente Supabase: ' . $e->getMessage());
+                // Falhar silenciosamente e retornar configuração
+            }
+        }
+        
+        // Se a biblioteca não estiver disponível ou houve erro, retorna array de configuração
+        return $configArray;
+    }
 }

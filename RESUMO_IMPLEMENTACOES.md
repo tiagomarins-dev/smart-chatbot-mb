@@ -132,6 +132,56 @@ Este documento resume todas as implementações feitas no projeto Smart-ChatBox 
 - Cada usuário vê apenas suas próprias chaves e webhooks
 - Row Level Security (RLS) aplicado no Supabase
 
+## 6. Sistema de Gerenciamento de Empresas
+
+### Funcionalidades Implementadas:
+- Cadastro, edição e desativação de empresas
+- Listagem de empresas do usuário
+- Interface web para gerenciamento
+- API completa com endpoints RESTful
+- Row Level Security (RLS) para isolamento de dados
+
+### Arquivos Criados:
+- `/supabase/migrations/00008_companies.sql`: Esquema de banco para empresas
+- `/api/v1/companies.php`: Endpoints da API para empresas
+- `/src/php/html/empresas.php`: Interface de gerenciamento
+- `/src/php/html/assets/js/companies.js`: Controlador para empresas
+
+## 7. Sistema de Gerenciamento de Projetos
+
+### Funcionalidades Implementadas:
+- Cadastro, edição e desativação de projetos
+- Associação de projetos a empresas
+- Datas de campanha (início e fim)
+- Interface web para gerenciamento
+- API completa com endpoints RESTful
+- Validação de datas de campanha
+- Formatação de datas de exibição
+
+### Arquivos Criados:
+- `/supabase/migrations/00009_projects.sql`: Esquema inicial de projetos
+- `/supabase/migrations/00010_project_campaign_dates.sql`: Adição de datas de campanha
+- `/api/v1/projects.php`: Endpoints da API para projetos
+- `/src/php/html/projetos.php`: Interface de gerenciamento
+- `/src/php/html/assets/js/projects.js`: Controlador para projetos
+
+## 8. Melhorias na Conexão com Supabase
+
+### Funcionalidades Implementadas:
+- Método `getSupabaseClient()` na classe Database
+- Novo endpoint de teste de conexão
+- Verificação de credenciais necessárias
+- Validação de variáveis de ambiente obrigatórias
+- Documentação Swagger do endpoint de teste
+- Configuração do arquivo `.env` com variáveis essenciais
+
+### Arquivos Criados/Modificados:
+- `/api/models/Database.php`: Adicionado método getSupabaseClient()
+- `/api/v1/test-connection.php`: Novo endpoint para testar conexão
+- `/.env`: Atualizado com as variáveis necessárias
+- `/api/swagger.json`: Documentação do novo endpoint
+- `/README.md`: Instruções atualizadas para configuração
+
 ## Próximos Passos Possíveis
 
 1. **Implementar Dashboard de Analytics:**
@@ -143,6 +193,7 @@ Este documento resume todas as implementações feitas no projeto Smart-ChatBox 
    - Endpoints para grupos de contatos
    - Suporte a mensagens de mídia
    - Templates de mensagens
+   - Integração com IA para automação
    
 3. **Melhorar Documentação da API:**
    - Adicionar console interativo de teste
@@ -153,3 +204,8 @@ Este documento resume todas as implementações feitas no projeto Smart-ChatBox 
    - Implementar autenticação multifator
    - Rotação automática de chaves API
    - Sistema avançado de detecção de abusos
+   
+5. **Sistema de Leads:**
+   - Implementar cadastro e gerenciamento de leads
+   - Associar leads a projetos e empresas
+   - Adicionar relatórios e métricas de conversão

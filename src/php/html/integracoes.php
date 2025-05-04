@@ -25,6 +25,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/json.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/bash.min.js"></script>
+    
+    <!-- Carregamento antecipado dos scripts de autenticação -->
+    <script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
+                "./supabase.js": "./assets/js/supabase.js",
+                "./auth.js": "./assets/js/auth.js",
+                "./login-check.js": "./assets/js/login-check.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import './assets/js/login-check.js';
+    </script>
 </head>
 <body>
     <!-- Navbar Fixa -->
@@ -45,16 +61,19 @@
                         <a class="nav-link" href="index.php"><i class="fas fa-home me-1"></i> Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-building me-1"></i> Empresas</a>
+                        <a class="nav-link" href="empresas.php"><i class="fas fa-building me-1"></i> Empresas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-project-diagram me-1"></i> Projetos</a>
+                        <a class="nav-link" href="projetos.php"><i class="fas fa-project-diagram me-1"></i> Projetos</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#"><i class="fas fa-users me-1"></i> Leads</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="integracoes.php"><i class="fas fa-plug me-1"></i> Integrações</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="api-docs.php"><i class="fas fa-book me-1"></i> API Docs</a>
                     </li>
                 </ul>
                 
@@ -268,6 +287,11 @@
                                                 <div class="accordion-body">
                                                     <p>A API Smart-ChatBox permite que desenvolvedores integrem funcionalidades de mensagens WhatsApp diretamente em seus aplicativos.</p>
                                                     <p>Todas as requisições devem ser feitas para a URL base: <code>https://seu-dominio.com/api/v1/</code></p>
+                                                    <div class="mt-3">
+                                                        <a href="api-docs.php" class="btn btn-primary">
+                                                            <i class="fas fa-book me-2"></i> Ver Documentação Completa (Swagger)
+                                                        </a>
+                                                    </div>
                                                     <h6>Autenticação</h6>
                                                     <p>Existem duas formas de autenticar suas requisições:</p>
                                                     <ol>
@@ -640,23 +664,17 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
-                "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm",
-                "./supabase.js": "./assets/js/supabase.js",
-                "./auth.js": "./assets/js/auth.js",
                 "./auth-utils.js": "./assets/js/auth-utils.js",
                 "./integrations.js": "./assets/js/integrations.js",
-                "./integrations-ui.js": "./assets/js/integrations-ui.js",
-                "./login-check.js": "./assets/js/login-check.js"
+                "./integrations-ui.js": "./assets/js/integrations-ui.js"
             }
         }
     </script>
     <script type="module">
         import './assets/js/main.js';
-        import './assets/js/login-check.js';
         import IntegrationsUI from './assets/js/integrations-ui.js';
         
         document.addEventListener('DOMContentLoaded', function() {
