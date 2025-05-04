@@ -1,0 +1,79 @@
+# Configuração do .htaccess para a API
+
+# Habilitar o mod_rewrite
+RewriteEngine On
+
+# Definir diretório base
+# Se a API estiver em um subdiretório, ajuste esta linha
+RewriteBase /api/
+
+# Permitir apenas métodos HTTP específicos
+<LimitExcept GET POST PUT DELETE OPTIONS HEAD>
+    Require all denied
+</LimitExcept>
+
+# Adicionar cabeçalhos de segurança
+<IfModule mod_headers.c>
+    # Segurança
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # Em produção, restrinja a política de recursos
+    # Header always set Content-Security-Policy "default-src 'self'; script-src 'self'"
+    
+    # Controle de cache para recursos estáticos
+    <FilesMatch "\.(ico|pdf|jpg|jpeg|png|gif|js|css|svg)$">
+        Header set Cache-Control "max-age=31536000, public"
+    </FilesMatch>
+    
+    # Cache para APIs
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+    </FilesMatch>
+</IfModule>
+
+# Bloquer acesso a arquivos e diretórios sensíveis
+<FilesMatch "(^\.|\.(bak|config|sql|fla|ini|log|sh|inc|swp|dist)|~)$">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+</FilesMatch>
+
+# Ocultar informações do servidor
+ServerSignature Off
+
+# Desabilitar listagem de diretórios
+Options -Indexes
+
+# Redirecionar todas as requisições para index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+
+# Desabilitar PHP em uploads e outros diretórios sensíveis
+<IfModule mod_rewrite.c>
+    RewriteRule ^(data|logs|config|utils|middleware|models)/.*\.php$ - [F,L]
+</IfModule>
+
+# Configurar PHP
+<IfModule mod_php7.c>
+    php_flag display_errors off
+    php_value max_execution_time 60
+    php_value memory_limit 256M
+    php_value post_max_size 20M
+    php_value upload_max_filesize 10M
+</IfModule>
+
+# Adicionar tipos MIME
+<IfModule mod_mime.c>
+    AddType application/json .json
+</IfModule>
+
+# Configurar compressão
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/json application/javascript text/css text/html
+</IfModule>

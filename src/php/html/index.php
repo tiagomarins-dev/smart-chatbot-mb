@@ -47,6 +47,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#"><i class="fas fa-users me-1"></i> Leads</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="integracoes.php"><i class="fas fa-plug me-1"></i> Integrações</a>
+                    </li>
                 </ul>
                 
                 <div class="d-flex align-items-center">
@@ -72,6 +75,7 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>Perfil</a></li>
                             <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configurações</a></li>
+                            <li><a class="dropdown-item" href="integracoes.php"><i class="fas fa-plug me-2"></i>Integrações</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
