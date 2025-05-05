@@ -130,9 +130,98 @@
         </div>
         
         <!-- Conteúdo principal para usuários autenticados -->
+        <!-- Widgets de Métricas -->
+        <div class="row mb-3 auth-required d-none">
+        <div class="col-sm-6 col-lg-3 mb-4">
+            <a href="empresas.php" class="text-decoration-none text-reset">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h4 class="fw-normal text-danger" id="company-count">0</h4>
+                                <p class="small text-muted mb-0">Empresas</p>
+                            </div>
+                            <div class="flex-shrink-0 ms-3">
+                                <i class="fas fa-building fa-2x text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer py-3 bg-danger bg-opacity-10">
+                        <div class="row align-items-center text-danger">
+                            <div class="col-10"><p class="mb-0">Gerenciar</p></div>
+                            <div class="col-2 text-end"><i class="fas fa-arrow-right"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+            <div class="col-sm-6 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h4 class="fw-normal text-info">584</h4>
+                                <p class="subtitle text-sm text-muted mb-0">Readers</p>
+                            </div>
+                            <div class="flex-shrink-0 ms-3">
+                                <i class="fas fa-book-reader fa-2x text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer py-3 bg-info bg-opacity-10">
+                        <div class="row align-items-center text-info">
+                            <div class="col-10"><p class="mb-0">3% increase</p></div>
+                            <div class="col-2 text-end"><i class="fas fa-caret-up"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h4 class="fw-normal text-primary">876</h4>
+                                <p class="subtitle text-sm text-muted mb-0">Bookmarks</p>
+                            </div>
+                            <div class="flex-shrink-0 ms-3">
+                                <i class="fas fa-bookmark fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer py-3 bg-primary bg-opacity-10">
+                        <div class="row align-items-center text-primary">
+                            <div class="col-10"><p class="mb-0">10% increase</p></div>
+                            <div class="col-2 text-end"><i class="fas fa-caret-up"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h4 class="fw-normal text-success">3,500</h4>
+                                <p class="subtitle text-sm text-muted mb-0">Visitors</p>
+                            </div>
+                            <div class="flex-shrink-0 ms-3">
+                                <i class="fas fa-users fa-2x text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer py-3 bg-success bg-opacity-10">
+                        <div class="row align-items-center text-success">
+                            <div class="col-10"><p class="mb-0">5% decrease</p></div>
+                            <div class="col-2 text-end"><i class="fas fa-caret-down"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="row mt-4 auth-required d-none">
             <!-- Card de Status do WhatsApp -->
-            <div class="col-md-6 mb-4">
+            <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card fade-in h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fab fa-whatsapp me-2"></i>Status do WhatsApp</h5>
@@ -169,15 +258,20 @@
             </div>
             
             <!-- Card de Mensagens Rápidas -->
-            <div class="col-md-6 mb-4">
+            <div class="col-md-6 col-lg-8 mb-4">
                 <div class="card fade-in h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Mensagens</h5>
-                        <button id="refresh-messages" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-sync-alt me-1"></i> Atualizar
-                        </button>
+                        <div class="d-flex align-items-center">
+                            <button id="refresh-messages" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-sync-alt me-1"></i> Atualizar
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMessageCard" aria-expanded="false" aria-controls="collapseMessageCard">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body p-0">
+                    <div id="collapseMessageCard" class="collapse card-body p-0">
                         <div class="quick-message-header p-3 border-bottom d-flex justify-content-between align-items-center">
                             <span><i class="fas fa-users me-1"></i> <span id="contact-count">0</span> contatos</span>
                             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newMessageModal">
@@ -196,6 +290,61 @@
             </div>
         </div>
         
+        <!-- Atalhos Rápidos -->
+        <div class="row mb-3 auth-required d-none">
+            <div class="col-sm-6 col-lg-4 mb-4">
+                <a href="empresas.php" class="text-decoration-none">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h4 class="fw-normal text-primary">Empresas</h4>
+                                    <p class="small text-muted mb-0">Gestão de empresas</p>
+                                </div>
+                                <div class="flex-shrink-0 ms-3">
+                                    <i class="fas fa-building fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-lg-4 mb-4">
+                <a href="projetos.php" class="text-decoration-none">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h4 class="fw-normal text-success">Projetos</h4>
+                                    <p class="small text-muted mb-0">Gerenciar projetos</p>
+                                </div>
+                                <div class="flex-shrink-0 ms-3">
+                                    <i class="fas fa-project-diagram fa-2x text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6 col-lg-4 mb-4">
+                <a href="leads.php" class="text-decoration-none">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h4 class="fw-normal text-info">Leads</h4>
+                                    <p class="small text-muted mb-0">Gerenciar leads</p>
+                                </div>
+                                <div class="flex-shrink-0 ms-3">
+                                    <i class="fas fa-users fa-2x text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
         <!-- Status Footer -->
         <div class="row">
             <div class="col-12">
