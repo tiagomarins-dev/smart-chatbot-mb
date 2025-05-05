@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-navigation-type="default" data-navbar-horizontal-shape="default">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Document Title -->
+  <title>Smart Chatbot - Leadflow Intelligence</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="../template/public/assets/img/favicons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../template/public/assets/img/favicons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../template/public/assets/img/favicons/favicon-16x16.png">
+  <link rel="shortcut icon" type="image/x-icon" href="../template/public/assets/img/favicons/favicon.ico">
+  <link rel="manifest" href="../template/public/assets/img/favicons/manifest.json">
+  <meta name="msapplication-TileImage" content="../template/public/assets/img/favicons/mstile-150x150.png">
+  <meta name="theme-color" content="#ffffff">
+  <script src="../template/public/vendors/simplebar/simplebar.min.js"></script>
+  <script src="../template/public/assets/js/config.js"></script>
+
+  <!-- Stylesheets -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&amp;display=swap" rel="stylesheet">
+  <link href="../template/public/vendors/simplebar/simplebar.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+  <link href="../template/public/assets/css/theme-rtl.min.css" type="text/css" rel="stylesheet" id="style-rtl">
+  <link href="../template/public/assets/css/theme.min.css" type="text/css" rel="stylesheet" id="style-default">
+  <link href="../template/public/assets/css/user-rtl.min.css" type="text/css" rel="stylesheet" id="user-style-rtl">
+  <link href="../template/public/assets/css/user.min.css" type="text/css" rel="stylesheet" id="user-style-default">
+  <link href="styles.css" type="text/css" rel="stylesheet">
+  <script>
+    var phoenixIsRTL = window.config.config.phoenixIsRTL;
+    if (phoenixIsRTL) {
+      var linkDefault = document.getElementById('style-default');
+      var userLinkDefault = document.getElementById('user-style-default');
+      linkDefault.setAttribute('disabled', true);
+      userLinkDefault.setAttribute('disabled', true);
+      document.querySelector('html').setAttribute('dir', 'rtl');
+    } else {
+      var linkRTL = document.getElementById('style-rtl');
+      var userLinkRTL = document.getElementById('user-style-rtl');
+      linkRTL.setAttribute('disabled', true);
+      userLinkRTL.setAttribute('disabled', true);
+    }
+  </script>
+</head>
+
+<body style="--phoenix-scroll-margin-top: 1.2rem;">
+
+  <!-- Main Content -->
+  <main class="main" id="top">
+    <div class="bg-body-emphasis sticky-top" data-navbar-shadow-on-scroll="data-navbar-shadow-on-scroll">
+      <nav class="navbar navbar-expand-lg container-small px-3 px-lg-7 px-xxl-3">
+        <a class="navbar-brand flex-1 flex-lg-grow-0" href="index.html">
+          <div class="d-flex align-items-center">
+            <h5 class="logo-text ms-2">Leadflow Intelligence</h5>
+          </div>
+        </a>
+        <div class="d-lg-none">
+          <div class="theme-control-toggle fa-icon-wait px-2">
+            <input class="form-check-input ms-0 theme-control-toggle-input" type="checkbox" data-theme-control="phoenixTheme" value="dark" id="themeControlToggleSm" />
+            <label class="mb-0 theme-control-toggle-label theme-control-toggle-light" for="themeControlToggleSm" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Switch theme" style="height:32px;width:32px;"><span class="icon" data-feather="moon"></span></label>
+            <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggleSm" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Switch theme" style="height:32px;width:32px;"><span class="icon" data-feather="sun"></span></label>
+          </div>
+        </div>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item border-bottom border-translucent border-bottom-lg-0"><a class="nav-link lh-1 py-0 fs-9 fw-bold py-3" aria-current="page" href="#home">Home</a></li>
+            <li class="nav-item border-bottom border-translucent border-bottom-lg-0"><a class="nav-link lh-1 py-0 fs-9 fw-bold py-3" href="#features">Features</a></li>
+            <li class="nav-item border-bottom border-translucent border-bottom-lg-0"><a class="nav-link lh-1 py-0 fs-9 fw-bold py-3" href="#benefits">Benefits</a></li>
+            <li class="nav-item"><a class="nav-link lh-1 py-0 fs-9 fw-bold py-3" href="#contact">Contact</a></li>
+          </ul>
+          <div class="d-grid d-lg-flex align-items-center">
+            <div class="nav-item d-flex align-items-center d-none d-lg-block pe-2">
+              <div class="theme-control-toggle fa-icon-wait px-2">
+                <input class="form-check-input ms-0 theme-control-toggle-input" type="checkbox" data-theme-control="phoenixTheme" value="dark" id="themeControlToggle" />
+                <label class="mb-0 theme-control-toggle-label theme-control-toggle-light" for="themeControlToggle" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Switch theme" style="height:32px;width:32px;"><span class="icon" data-feather="moon"></span></label>
+                <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggle" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Switch theme" style="height:32px;width:32px;"><span class="icon" data-feather="sun"></span></label>
+              </div>
+            </div>
+            <a class="btn btn-link text-body order-1 order-lg-0 ps-4 me-lg-2" href="../src/php/html/login.php">Sign in</a>
+            <a class="btn btn-phoenix-primary order-0" href="../src/php/html/register.php"><span class="fw-bold">Sign up</span></a>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="bg-body-emphasis pb-8" id="home">
+      <div class="container-small hero-header-container px-lg-7 px-xxl-3">
+        <div class="row align-items-center">
+          <div class="col-12 col-lg-auto order-0 order-md-1 text-end order-1">
+            <div class="position-relative p-5 p-md-7 d-lg-none">
+              <div class="bg-holder" style="background-image:url(../template/public/assets/img/bg/bg-23.png);background-size:contain;">
+              </div>
+              <div class="position-relative">
+                <img class="w-100 shadow-lg d-dark-none rounded-2" src="../template/public/assets/img/bg/bg-31.png" alt="hero-header" />
+                <img class="w-100 shadow-lg d-light-none rounded-2" src="../template/public/assets/img/bg/bg-30.png" alt="hero-header" />
+              </div>
+            </div>
+            <div class="hero-image-container position-absolute top-0 bottom-0 end-0 d-none d-lg-block">
+              <div class="position-relative h-100 w-100">
+                <div class="position-absolute h-100 top-0 d-flex align-items-center end-0 hero-image-container-bg">
+                  <img class="pt-7 pt-md-0 w-100" src="../template/public/assets/img/bg/bg-1-2.png" alt="hero-header" />
+                </div>
+                <div class="position-absolute h-100 top-0 d-flex align-items-center end-0">
+                  <img class="pt-7 pt-md-0 w-100 shadow-lg d-dark-none rounded-2" src="../template/public/assets/img/bg/bg-28.png" alt="hero-header" />
+                  <img class="pt-7 pt-md-0 w-100 shadow-lg d-light-none rounded-2" src="../template/public/assets/img/bg/bg-29.png" alt="hero-header" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6 text-lg-start text-center pt-8 pb-6 order-0 position-relative">
+            <h1 class="fs-3 fs-lg-2 fs-md-1 fs-lg-2 fs-xl-1 fs fw-black mb-4">
+              <span class="text-primary me-3">Gerencie Todo o Ciclo de Vida</span>dos Seus Leads<br />em Uma Única Plataforma
+            </h1>
+            <p class="mb-5">Capture, qualifique, e converta leads de forma eficiente com nossa solução completa de gestão de leads baseada em projetos e empresas.</p>
+            <a class="btn btn-lg btn-primary rounded-pill me-3" href="../src/php/html/register.php" role="button">Experimente Grátis</a>
+            <a class="btn btn-link me-2 fs-8 p-0" href="#features" role="button">Conheça os Recursos<span class="fa-solid fa-angle-right ms-2 fs-9"></span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Brands Section -->
+    <section class="py-5 pt-xl-13 bg-body-emphasis">
+      <div class="container-small px-lg-7 px-xxl-3">
+        <div class="row g-0">
+          <div class="col-6 col-md-3">
+            <div class="p-2 p-lg-5 d-flex flex-center h-100 border-1 border-dashed border-bottom border-translucent border-end">
+              <img class="w-100" src="../template/public/assets/img/brands/phoenix-firelines.png" alt="Brand" />
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-2 p-lg-5 d-flex flex-center h-100 border-1 border-dashed border-bottom border-translucent border-end-md">
+              <img class="w-100" src="../template/public/assets/img/brand2/google-g.png" alt="Brand" />
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-2 p-lg-5 d-flex flex-center h-100 border-1 border-dashed border-bottom border-translucent border-end border-end-md">
+              <img class="w-100" src="../template/public/assets/img/brand2/microsoft.png" alt="Brand" />
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-2 p-lg-5 d-flex flex-center h-100 border-1 border-dashed border-bottom border-translucent border-end-lg-0">
+              <img class="w-100" src="../template/public/assets/img/brand2/intel-2.png" alt="Brand" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="pt-15 pb-0" id="features">
+      <div class="container-small px-lg-7 px-xxl-3">
+        <div class="position-relative z-2">
+          <div class="row">
+            <div class="col-lg-6 text-center text-lg-start pe-xxl-3">
+              <h4 class="text-primary fw-bolder mb-4">Principais Recursos</h4>
+              <h2 class="mb-3 text-body-emphasis lh-base">Leadflow Intelligence: <br class="d-md-none" />Transforme Sua Gestão de Leads</h2>
+              <p class="mb-5">Organize, acompanhe e aumente suas conversões com nossa plataforma completa de gerenciamento de leads. Da captura automatizada à análise detalhada de campanhas, nosso sistema proporciona uma visão estruturada e insights acionáveis para cada etapa do funil de vendas.</p>
+              <a class="btn btn-lg btn-outline-primary rounded-pill me-2" href="#benefits" role="button">Saiba Mais<i class="fa-solid fa-angle-right ms-2"></i></a>
+            </div>
+            <div class="col-sm-6 col-lg-3 mt-7 text-center text-lg-start">
+              <div class="h-100 d-flex flex-column justify-content-between">
+                <div class="border-start-lg border-translucent border-dashed ps-4">
+                  <img class="mb-4" src="../template/public/assets/img/icons/illustrations/bolt.png" width="48" height="48" alt="" />
+                  <div>
+                    <h5 class="fw-bolder mb-2">Organização Hierárquica</h5>
+                    <p class="fw-semibold lh-sm">Estruture seus leads por empresas e projetos, facilitando a gestão de múltiplas campanhas e segmentos de negócio simultaneamente.</p>
+                  </div>
+                  <div><a class="btn btn-link me-2 p-0 fs-9" href="#" role="button">Saiba Mais<span class="fa-solid fa-angle-right ms-2"></span></a></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6 col-lg-3 mt-7 text-center text-lg-start">
+              <div class="h-100 d-flex flex-column">
+                <div class="border-start-lg border-translucent border-dashed ps-4">
+                  <img class="mb-4" src="../template/public/assets/img/icons/illustrations/pie.png" width="48" height="48" alt="" />
+                  <div>
+                    <h5 class="fw-bolder mb-2">Ciclo de Vida Completo</h5>
+                    <p class="fw-semibold lh-sm">Acompanhe cada lead do primeiro contato à conversão com estados personalizáveis e histórico completo de mudanças.</p>
+                  </div>
+                  <div><a class="btn btn-link me-2 p-0 fs-9" href="#" role="button">Saiba Mais<i class="fa-solid fa-angle-right ms-2"></i></a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Feature Row 1 -->
+          <div class="row mt-12 align-items-center justify-content-between text-center text-lg-start mb-6 mb-lg-0">
+            <div class="col-lg-5">
+              <img class="feature-image img-fluid mb-9 mb-lg-0 d-dark-none" src="../template/public/assets/img/spot-illustrations/22_2.png" alt="" />
+              <img class="feature-image img-fluid mb-9 mb-lg-0 d-light-none" src="../template/public/assets/img/spot-illustrations/dark_22.png" alt="" />
+            </div>
+            <div class="col-lg-6">
+              <h6 class="text-primary mb-2 ls-2">GESTÃO AVANÇADA DE LEADS</h6>
+              <h3 class="fw-bolder mb-3">Acompanhe Cada Lead do Início ao Fim</h3>
+              <p class="mb-4 px-md-7 px-lg-0">Mova leads através de um fluxo de trabalho estruturado, desde a captação inicial até a conversão. Estados personalizáveis (novo, qualificado, contatado, convertido, etc.) com histórico completo de mudanças e notas.</p>
+              <a class="btn btn-link me-2 p-0 fs-9" href="#" role="button">Saiba Mais<i class="fa-solid fa-angle-right ms-2"></i></a>
+            </div>
+          </div>
+          
+          <!-- Feature Row 2 -->
+          <div class="row mt-2 align-items-center justify-content-between text-center text-lg-start mb-6 mb-lg-0">
+            <div class="col-lg-5 order-0 order-lg-1">
+              <img class="feature-image img-fluid mb-9 mb-lg-0 d-dark-none" src="../template/public/assets/img/spot-illustrations/23_2.png" height="394" alt="" />
+              <img class="feature-image img-fluid mb-9 mb-lg-0 d-light-none" src="../template/public/assets/img/spot-illustrations/dark_23.png" height="394" alt="" />
+            </div>
+            <div class="col-lg-6">
+              <h6 class="text-primary mb-2 ls-2">API E INTEGRAÇÕES</h6>
+              <h3 class="fw-bolder mb-3">Conecte com Suas Ferramentas Existentes</h3>
+              <p class="mb-4 px-md-7 px-lg-0">API RESTful completa com documentação detalhada, autenticação segura via JWT ou chaves API e sistema de webhooks para integrações em tempo real. Permissões granulares e rate limiting garantem segurança e desempenho.</p>
+              <a class="btn btn-link me-2 p-0 fs-9" href="#" role="button">Saiba Mais<i class="fa-solid fa-angle-right ms-2"></i></a>
+            </div>
+          </div>
+          
+          <!-- Feature Row 3 -->
+          <div class="row mt-2 align-items-center justify-content-between text-center text-lg-start mb-6 mb-lg-0">
+            <div class="col-lg-5">
+              <img class="feature-image img-fluid mb-9 mb-lg-0 d-dark-none" src="../template/public/assets/img/spot-illustrations/24_2.png" height="394" alt="" />
+              <img class="feature-image img-fluid mb-9 mb-lg-0 d-light-none" src="../template/public/assets/img/spot-illustrations/dark_24.png" height="394" alt="" />
+            </div>
+            <div class="col-lg-6 text-center text-lg-start">
+              <h6 class="text-primary mb-2 ls-2">ANALYTICS AVANÇADO</h6>
+              <h3 class="fw-bolder mb-3">Meça e Otimize Suas Campanhas</h3>
+              <p class="mb-4 px-md-7 px-lg-0">Acompanhe estatísticas detalhadas de conversão, rastreie a eficácia de diferentes canais através de parâmetros UTM e visualize a performance em dashboards intuitivos para tomar decisões baseadas em dados.</p>
+              <a class="btn btn-link me-2 p-0 fs-9" href="#" role="button">Saiba Mais<i class="fa-solid fa-angle-right ms-2"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section id="benefits" class="py-8">
+      <div class="container-small px-lg-7 px-xxl-3">
+        <div class="text-center mb-7">
+          <h4 class="text-primary fw-bolder mb-3">Benefícios</h4>
+          <h2 class="mb-3">Solução Completa para Cada Área</h2>
+          <p class="mx-auto" style="max-width: 600px;">Nossa plataforma oferece benefícios específicos para diferentes equipes da sua empresa, otimizando processos e melhorando resultados.</p>
+        </div>
+        
+        <div class="row g-4">
+          <!-- Para Marketing -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <span class="fs-4 text-primary me-2"><i class="fas fa-bullhorn"></i></span>
+                  <h5 class="mb-0">Para Marketing</h5>
+                </div>
+                <ul class="list-unstyled">
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Rastreamento preciso de UTMs</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Métricas claras de ROI por campanha</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Integração com ferramentas existentes</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Exportação para análises personalizadas</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Para Vendas -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <span class="fs-4 text-primary me-2"><i class="fas fa-chart-line"></i></span>
+                  <h5 class="mb-0">Para Vendas</h5>
+                </div>
+                <ul class="list-unstyled">
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Visualização clara do pipeline</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Histórico completo de status</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Organização por projetos e empresas</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Acesso móvel às informações</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Para Gestores -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <span class="fs-4 text-primary me-2"><i class="fas fa-user-tie"></i></span>
+                  <h5 class="mb-0">Para Gestores</h5>
+                </div>
+                <ul class="list-unstyled">
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Visão consolidada de performance</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Relatórios detalhados de conversão</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Rastreamento de progresso da equipe</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Decisões baseadas em dados</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Para Devs -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <span class="fs-4 text-primary me-2"><i class="fas fa-code"></i></span>
+                  <h5 class="mb-0">Para Desenvolvedores</h5>
+                </div>
+                <ul class="list-unstyled">
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> API RESTful bem documentada</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> JWT e API Keys seguras</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Webhooks para integrações</li>
+                  <li class="mb-2"><i class="fas fa-check text-primary me-2"></i> Permissões granulares</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recursos Técnicos -->
+          <div class="col-12">
+            <div class="card mt-4">
+              <div class="card-body">
+                <h5 class="card-title mb-4 text-center">Funcionalidades Técnicas</h5>
+                <div class="row">
+                  <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="d-flex align-items-center">
+                      <span class="fs-4 text-primary me-3"><i class="fas fa-shield-alt"></i></span>
+                      <div>
+                        <h6 class="mb-1">Segurança Avançada</h6>
+                        <p class="card-text small mb-0">Autenticação JWT, Row Level Security e permissões granulares</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="d-flex align-items-center">
+                      <span class="fs-4 text-primary me-3"><i class="fas fa-database"></i></span>
+                      <div>
+                        <h6 class="mb-1">Escalabilidade</h6>
+                        <p class="card-text small mb-0">Arquitetura baseada em Supabase e PostgreSQL</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="d-flex align-items-center">
+                      <span class="fs-4 text-primary me-3"><i class="fas fa-sliders-h"></i></span>
+                      <div>
+                        <h6 class="mb-1">Personalização</h6>
+                        <p class="card-text small mb-0">Interfaces intuitivas para configuração sem código</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-8 bg-primary">
+      <div class="container-small px-lg-7 px-xxl-3">
+        <div class="row align-items-center">
+          <div class="col-lg-8 text-center text-lg-start">
+            <h2 class="text-white mb-3 mb-lg-0">Experimente Gratuitamente por 14 Dias</h2>
+            <p class="text-white-50 mb-lg-0 d-none d-lg-block">Tenha acesso completo a todas as funcionalidades da plataforma. Sem compromisso, sem necessidade de cartão de crédito.</p>
+          </div>
+          <div class="col-lg-4 text-center text-lg-end mt-4 mt-lg-0">
+            <a class="btn btn-lg btn-outline-light rounded-pill" href="../src/php/html/register.php">Comece Agora</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="py-8" id="contact">
+      <div class="container-small px-lg-7 px-xxl-3">
+        <div class="text-center mb-7">
+          <h4 class="text-primary fw-bolder mb-3">Solicite uma Demonstração</h4>
+          <h2 class="mb-3">Veja a Plataforma em Ação</h2>
+          <p class="mx-auto" style="max-width: 600px;">Descubra como a Leadflow Intelligence pode se adaptar às necessidades específicas da sua empresa com uma demonstração personalizada.</p>
+        </div>
+        
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-body p-5">
+                <form>
+                  <div class="row g-4">
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input class="form-control" id="floatingName" type="text" placeholder="Nome" />
+                        <label for="floatingName">Seu Nome</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input class="form-control" id="floatingEmail" type="email" placeholder="Email" />
+                        <label for="floatingEmail">Email Corporativo</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input class="form-control" id="floatingCompany" type="text" placeholder="Empresa" />
+                        <label for="floatingCompany">Nome da Empresa</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" id="floatingLeads">
+                          <option selected disabled>Selecione...</option>
+                          <option value="1-100">1-100 leads/mês</option>
+                          <option value="101-500">101-500 leads/mês</option>
+                          <option value="501-2000">501-2000 leads/mês</option>
+                          <option value="2000+">Mais de 2000 leads/mês</option>
+                        </select>
+                        <label for="floatingLeads">Volume Mensal de Leads</label>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-floating">
+                        <textarea class="form-control" id="floatingMessage" placeholder="Mensagem" style="height: 120px"></textarea>
+                        <label for="floatingMessage">Quais são seus principais desafios na gestão de leads?</label>
+                      </div>
+                    </div>
+                    <div class="col-12 text-center">
+                      <button class="btn btn-primary rounded-pill px-5" type="submit">Solicitar Demo</button>
+                      <p class="text-muted fs-9 mt-3">Ao enviar este formulário, você concorda com nossa política de privacidade.</p>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer bg-body-tertiary">
+      <div class="container-small px-lg-7 px-xxl-3">
+        <div class="row py-5">
+          <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+            <h5 class="mb-3">Leadflow Intelligence</h5>
+            <p class="mb-1">A solução completa para gerenciamento de leads</p>
+            <p class="mb-3">Da captura à conversão, ajudamos você a gerenciar todo o ciclo de vida dos seus leads.</p>
+            <div class="d-flex mb-3">
+              <a href="#" class="me-2 text-body-emphasis"><i class="fab fa-linkedin-in fa-lg"></i></a>
+              <a href="#" class="me-2 text-body-emphasis"><i class="fab fa-twitter fa-lg"></i></a>
+              <a href="#" class="me-2 text-body-emphasis"><i class="fab fa-facebook-f fa-lg"></i></a>
+              <a href="#" class="text-body-emphasis"><i class="fab fa-instagram fa-lg"></i></a>
+            </div>
+            <p class="mb-0 fs-9">© 2025 Leadflow Intelligence. Todos os direitos reservados.</p>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2 mb-3 mb-md-0">
+            <h6 class="mb-3">Plataforma</h6>
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Gestão de Leads</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Analytics & Relatórios</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Gestão de Projetos</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">API & Integrações</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Segurança</a></li>
+            </ul>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2 mb-3 mb-md-0">
+            <h6 class="mb-3">Recursos</h6>
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Documentação</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Referência da API</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Guia de Webhooks</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Status do Sistema</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Changelog</a></li>
+            </ul>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2 mb-3 mb-md-0">
+            <h6 class="mb-3">Empresa</h6>
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Sobre nós</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Blog</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Carreiras</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Contato</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Parceiros</a></li>
+            </ul>
+          </div>
+          <div class="col-6 col-md-4 col-lg-2">
+            <h6 class="mb-3">Legal</h6>
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Política de Privacidade</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Termos de Serviço</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Conformidade LGPD</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Política de Segurança</a></li>
+              <li class="mb-2"><a class="text-body-emphasis text-decoration-none" href="#">Cookies</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ===============================================-->
+  <!--    JavaScripts-->
+  <!-- ===============================================-->
+  <script src="../template/public/vendors/popper/popper.min.js"></script>
+  <script src="../template/public/vendors/bootstrap/bootstrap.min.js"></script>
+  <script src="../template/public/vendors/anchorjs/anchor.min.js"></script>
+  <script src="../template/public/vendors/is/is.min.js"></script>
+  <script src="../template/public/vendors/fontawesome/all.min.js"></script>
+  <script src="../template/public/vendors/lodash/lodash.min.js"></script>
+  <script src="../template/public/vendors/list.js/list.min.js"></script>
+  <script src="../template/public/vendors/feather-icons/feather.min.js"></script>
+  <script src="../template/public/vendors/dayjs/dayjs.min.js"></script>
+  <script src="../template/public/assets/js/phoenix.js"></script>
+</body>
+
+</html>

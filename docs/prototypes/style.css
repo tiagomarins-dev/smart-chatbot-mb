@@ -3,4 +3,4 @@
  * CSS base do Phoenix v1.22.0
  * Importa estilização principal da biblioteca Phoenix para protótipos.
  */
-@import url('https://unpkg.com/@prium/phoenix@1.22.0/dist/css/phoenix.min.css');
+@import url('phoenix.min.css');

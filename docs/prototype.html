@@ -2,53 +2,84 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Protótipo Redesign - Smart-ChatBox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Protótipo Redesign – Smart-ChatBox</title>
   <!-- Google Font: Poppins -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
+      /* Paleta de cores */
       --primary: #6f42c1;
       --secondary: #9a76db;
       --gray-light: #f8f9fa;
       --gray: #dee2e6;
+
+      /* Variáveis de tema */
+      --bg: #ffffff;
+      --text: #333333;
+      --header-bg: #ffffff;
+      --hero-bg: var(--gray-light);
+      --features-bg: #ffffff;
+      --feature-card-bg: #ffffff;
+      --footer-bg: var(--gray-light);
     }
+
+    /* Tema escuro quando data-theme="dark" */
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #e9ecef;
+      --header-bg: rgba(0,0,0,0.8);
+      --hero-bg: #1f1f1f;
+      --features-bg: #121212;
+      --feature-card-bg: #1e1e1e;
+      --footer-bg: #1f1f1f;
+    }
+
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
-      color: #333;
+      color: var(--text);
       line-height: 1.6;
-      background: #fff;
+      background: var(--bg);
     }
+
     header {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: #fff;
+      background: var(--header-bg);
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       padding: 1rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
+
     .nav-link {
       margin-right: 1.5rem;
       text-decoration: none;
-      color: #333;
+      color: var(--text);
       font-weight: 500;
+      transition: color 0.2s;
     }
     .nav-link:hover { color: var(--primary); }
+
+    #theme-toggle {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+
     .hero {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       padding: 4rem 2rem;
-      background: var(--gray-light);
+      background: var(--hero-bg);
     }
-    .hero-text {
-      max-width: 600px;
-    }
+    .hero-text { max-width: 600px; }
     .hero h1 {
       font-size: 3rem;
       margin-bottom: 1rem;
@@ -57,6 +88,7 @@
       font-size: 1.125rem;
       margin-bottom: 2rem;
     }
+
     .btn {
       padding: 0.75rem 1.5rem;
       border: none;
@@ -75,15 +107,16 @@
       background: var(--secondary);
       color: #fff;
     }
+
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 2rem;
       padding: 4rem 2rem;
-      background: #fff;
+      background: var(--features-bg);
     }
     .feature-card {
-      background: #fff;
+      background: var(--feature-card-bg);
       padding: 2rem;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -93,13 +126,15 @@
       margin-bottom: 0.5rem;
       color: var(--primary);
     }
+
     footer {
       padding: 2rem;
       text-align: center;
       font-size: 0.875rem;
-      background: var(--gray-light);
-      color: #666;
+      background: var(--footer-bg);
+      color: var(--text);
     }
+
     img {
       max-width: 100%;
       height: auto;
@@ -117,11 +152,12 @@
       <a class="nav-link" href="leads.php">Leads</a>
       <a class="nav-link" href="integracoes.php">Integrações</a>
     </nav>
+    <button id="theme-toggle" aria-label="Alternar tema">🌙</button>
   </header>
+
   <section class="hero">
     <div class="hero-text">
-      <h1>Gerencie Seus Leads de Forma Inteligente</h1>
-      <p>A plataforma Smart-ChatBox ajuda você a capturar, organizar e converter leads com facilidade.</p>
+      <h1>Gerencie Seus Leads de Forma Inteligente</n+      <p>A plataforma Smart-ChatBox ajuda você a capturar, organizar e converter leads com facilidade.</p>
       <button class="btn btn-primary">Começar Agora</button>
       <button class="btn btn-secondary">Ver Documentação</button>
     </div>
@@ -129,6 +165,7 @@
       <img src="https://via.placeholder.com/500x350" alt="Ilustração de dashboard">
     </div>
   </section>
+
   <section class="features">
     <div class="feature-card">
       <h3>Dashboard Intuitivo</h3>
@@ -147,8 +184,27 @@
       <p>Exporte sua lista de leads em poucos cliques.</p>
     </div>
   </section>
+
   <footer>
     &copy; 2025 Smart-ChatBox. Todos os direitos reservados.
   </footer>
+
+  <script>
+    (function() {
+      const btn = document.getElementById('theme-toggle');
+      const root = document.documentElement;
+      const stored = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let theme = stored || (prefersDark ? 'dark' : 'light');
+      root.setAttribute('data-theme', theme);
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      btn.addEventListener('click', () => {
+        theme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      });
+    })();
+  </script>
 </body>
 </html>

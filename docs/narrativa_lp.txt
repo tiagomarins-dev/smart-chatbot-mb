@@ -1,0 +1,128 @@
+# Narrativa e Copy para Landing Page - Smart-ChatBox (Leadflow Intelligence)
+
+## Narrativa
+
+A Smart-ChatBox (Leadflow Intelligence) é uma plataforma completa de gerenciamento de leads e interações com clientes, desenvolvida para empresas que precisam organizar, acompanhar e otimizar seu processo de captação e conversão de leads. A plataforma se destaca por sua arquitetura modular, segurança integrada e flexibilidade para se adaptar a diferentes necessidades de negócio.
+
+Nossa narrativa para a landing page se concentra em quatro pilares fundamentais:
+
+1. **Gestão Hierárquica de Leads**: Organização intuitiva de leads por empresas e projetos, permitindo uma visão estruturada de campanhas e conversões.
+
+2. **Ciclo de Vida Completo**: Acompanhamento do lead desde a captação até a conversão, com estados claramente definidos (novo, qualificado, contatado, convertido, etc.).
+
+3. **Integrações e API Robusta**: Sistema de API RESTful completo com autenticação segura, webhooks, e integrações flexíveis para conectar com ferramentas existentes.
+
+4. **Análise de Dados e Relatórios**: Métricas detalhadas de campanhas e conversão, com rastreamento de UTMs e insights de desempenho.
+
+## Copy para Landing Page
+
+### Headline Principal
+**Gerencie Todo o Ciclo de Vida dos Seus Leads em Uma Única Plataforma**
+
+### Subheadline
+Capture, qualifique, e converta leads de forma eficiente com nossa solução completa de gestão de leads baseada em projetos e empresas.
+
+### Seção Hero
+**Leadflow Intelligence: Transforme Sua Gestão de Leads**
+
+Organize, acompanhe e aumente suas conversões com nossa plataforma completa de gerenciamento de leads. Da captura automatizada à análise detalhada de campanhas, nosso sistema proporciona uma visão estruturada e insights acionáveis para cada etapa do funil de vendas.
+
+### Principais Recursos (Features)
+
+#### Organização Hierárquica
+**Estruture seus leads por empresas e projetos**
+Organize leads em uma estrutura intuitiva de empresas e projetos, facilitando a gestão de múltiplas campanhas e segmentos de negócio simultaneamente. Filtros avançados permitem visualizar exatamente o que você precisa, quando precisa.
+
+#### Ciclo de Vida Completo
+**Acompanhe cada lead do primeiro contato à conversão**
+Mova leads através de um fluxo de trabalho estruturado, desde a captação inicial até a conversão. Estados personalizáveis (novo, qualificado, contatado, convertido, etc.) com histórico completo de mudanças e notas.
+
+#### API e Integrações
+**Conecte com suas ferramentas existentes**
+API RESTful completa com documentação detalhada, autenticação segura via JWT ou chaves API e sistema de webhooks para integrações em tempo real. Permissões granulares e rate limiting garantem segurança e desempenho.
+
+#### Analytics Avançado
+**Meça e otimize suas campanhas de marketing**
+Acompanhe estatísticas detalhadas de conversão, rastreie a eficácia de diferentes canais através de parâmetros UTM e visualize a performance em dashboards intuitivos para tomar decisões baseadas em dados.
+
+### Benefícios
+
+#### Para equipes de Marketing
+- Rastreamento preciso da origem de cada lead (UTM)
+- Métricas claras de ROI por campanha
+- Integração com ferramentas de marketing existentes
+- Exportação fácil de dados para análises personalizadas
+
+#### Para equipes de Vendas
+- Visualização clara do pipeline de leads
+- Atualização de status com histórico completo
+- Organização intuitiva por projetos e empresas
+- Acesso móvel às informações de contato e status
+
+#### Para Gerentes e Diretores
+- Visão consolidada de performance por campanha, projeto e empresa
+- Relatórios detalhados de conversão e eficiência
+- Rastreamento de progresso da equipe
+- Decisões baseadas em dados concretos
+
+#### Para Desenvolvedores e Integradores
+- API RESTful bem documentada
+- Sistema de autenticação seguro (JWT e API Keys)
+- Webhooks para integrações em tempo real
+- Permissões granulares para controle preciso
+
+### Funcionalidades Técnicas
+
+- **Segurança Avançada**: Autenticação JWT, Row Level Security, e permissões granulares
+- **Escalabilidade**: Arquitetura baseada em Supabase e PostgreSQL para alto desempenho
+- **Personalização**: Interfaces intuitivas para configuração sem código
+- **API Completa**: Acesso programático a todos os recursos da plataforma
+- **Webhooks**: Notificações em tempo real para sistemas externos
+- **Exportação de Dados**: Formatos CSV para análises customizadas
+
+### Call-to-Action
+
+#### CTA Principal
+**Comece a gerenciar seus leads de forma inteligente**
+
+#### CTA Secundário
+**Solicite uma demonstração personalizada**
+
+### Seção de Teste Gratuito
+
+**Experimente Gratuitamente por 14 Dias**
+
+Tenha acesso completo a todas as funcionalidades da plataforma Leadflow Intelligence por 14 dias. Sem compromisso, sem necessidade de cartão de crédito.
+
+### Testemunhos (Placeholder para Futuros Testemunhos)
+
+"A organização de leads por projetos e empresas revolucionou nossa gestão de campanhas. Conseguimos identificar claramente quais ações geram mais resultados e otimizar nossos investimentos." - [Nome], Diretor de Marketing
+
+"A integração via API com nossas ferramentas existentes foi surpreendentemente fácil. Em poucos dias, tínhamos um ecossistema completo funcionando sem problemas." - [Nome], CTO
+
+### Seção FAQ
+
+**Perguntas Frequentes**
+
+**Como a plataforma organiza os leads?**
+A Leadflow Intelligence utiliza uma estrutura hierárquica onde leads são associados a projetos, que por sua vez pertencem a empresas. Um mesmo lead pode estar associado a múltiplos projetos, facilitando campanhas cruzadas.
+
+**Posso integrar com meu CRM atual?**
+Sim. Nossa API RESTful completa e sistema de webhooks permitem integração com praticamente qualquer CRM ou ferramenta externa. Documentação detalhada e exemplos de código facilitam o processo.
+
+**Como funciona o rastreamento de UTMs?**
+Cada lead capturado pode ter parâmetros UTM associados (source, medium, campaign, term, content), permitindo análises detalhadas sobre a origem e eficácia de diferentes campanhas.
+
+**A plataforma é segura?**
+Absolutamente. Utilizamos autenticação JWT, Row Level Security do Supabase, criptografia de dados sensíveis e isolamento completo de dados entre usuários diferentes.
+
+### Footer e Informações de Contato
+
+**Leadflow Intelligence**
+A solução completa para gerenciamento de leads
+
+[Links para redes sociais]
+[Email para contato: contato@leadflow.io]
+[Política de Privacidade e Termos de Uso]
+
+© 2025 Leadflow Intelligence. Todos os direitos reservados.
