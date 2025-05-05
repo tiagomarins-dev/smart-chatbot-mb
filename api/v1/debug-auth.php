@@ -126,10 +126,11 @@ try {
     
     // Verificar conexão ao Supabase
     try {
+        // Testar conexão via API REST consultando tabela existente (companies)
         $testResponse = $supabase
-            ->from('information_schema.tables')
-            ->select('table_name')
-            ->filter('table_schema', 'eq', 'public')
+            ->from('companies')
+            ->select('id')
+            ->limit(1)
             ->execute();
         
         $debug['supabase_connection'] = !$testResponse->getError();

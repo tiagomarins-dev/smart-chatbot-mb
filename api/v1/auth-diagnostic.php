@@ -232,10 +232,10 @@ try {
             $supabaseConfig['service_role_key']
         );
         
-        // Testar acesso a tabela do sistema para verificar autenticação
+        // Testar acesso a uma tabela existente (companies) para verificar autenticação
         $response = $supabase
-            ->from('_schema.tables')
-            ->select('table_name')
+            ->from('companies')
+            ->select('id')
             ->execute();
         
         $diagnostic['auth_tests']['rest_api']['connection_time'] = round(microtime(true) - $startTime, 2) . 's';

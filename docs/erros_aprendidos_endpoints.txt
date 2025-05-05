@@ -1,0 +1,103 @@
+# Erros Aprendidos e Solucionados nos Endpoints REST API
+
+## Problema Principal: Acesso a Objetos versus Arrays
+
+O principal erro encontrado na implementação dos endpoints estava relacionado à forma como os dados de resposta do Supabase eram acessados. As funções estavam assumindo que os dados sempre seriam retornados como arrays associativos, mas em alguns casos o Supabase retornava objetos stdClass.
+
+### Erro Específico Encontrado
+```
+Cannot use object of type stdClass as array in /var/www/html/api/v1/projects.php
+```
+
+Este erro ocorria quando o código tentava acessar propriedades de um objeto stdClass usando a sintaxe de array (`$object['property']`).
+
+## Soluções Implementadas
+
+### 1. Verificação de Tipo Antes de Acessar Propriedades
+
+Para todas as propriedades acessadas, implementamos verificação de tipo:
+
+```php
+// Antes (problemático)
+$companyName = $companyData['name'] ?? 'Desconhecida';
+
+// Depois (robusto)
+$companyName = 'Desconhecida'; // valor padrão
+if (is_array($companyData) && isset($companyData['name'])) {
+    $companyName = $companyData['name'];
+} elseif (is_object($companyData) && isset($companyData->name)) {
+    $companyName = $companyData->name;
+}
+```
+
+### 2. Estruturas de Dados Complexas
+
+Para estruturas mais complexas como arrays aninhados ou objetos dentro de arrays:
+
+```php
+// Extrair o nome da empresa (abordagem robusta)
+if (is_array($compData) && !empty($compData)) {
+    if (isset($compData[0]) && is_array($compData[0]) && isset($compData[0]['name'])) {
+        $companyName = $compData[0]['name'];
+    } elseif (isset($compData[0]) && is_object($compData[0]) && isset($compData[0]->name)) {
+        $companyName = $compData[0]->name;
+    } else {
+        $companyName = 'Desconhecida';
+    }
+} elseif (is_object($compData) && isset($compData->name)) {
+    $companyName = $compData->name;
+} else {
+    $companyName = 'Desconhecida';
+}
+```
+
+### 3. Tratamento Condicional por Seções
+
+Para blocos maiores de código que processam e formatam dados:
+
+```php
+// Código mais robusto para montagem de resposta
+$projectResponse = [
+    'project' => $createdProject,
+    'message' => 'Projeto criado com sucesso',
+    'details' => [
+        'name' => null,
+        'company' => $companyName,
+        'created_at' => null
+    ]
+];
+
+// Obter o nome do projeto com verificação de tipo
+if (is_array($createdProject) && isset($createdProject['name'])) {
+    $projectResponse['details']['name'] = $createdProject['name'];
+} elseif (is_object($createdProject) && isset($createdProject->name)) {
+    $projectResponse['details']['name'] = $createdProject->name;
+} else {
+    $projectResponse['details']['name'] = $project['name'];
+}
+```
+
+## Padrões para Evitar Erros Semelhantes
+
+1. **Nunca assumir o tipo de retorno** das funções de acesso aos dados, especialmente quando utilizamos bibliotecas de terceiros.
+
+2. **Sempre verificar o tipo antes de acessar** propriedades de um objeto ou array quando não temos controle sobre a fonte dos dados.
+
+3. **Utilizar valores padrão** para casos em que os dados esperados não estejam disponíveis.
+
+4. **Implementar tratamento de erros explícito** para diferentes formatos de resposta.
+
+5. **Manter compatibilidade** com múltiplos formatos de resposta (array e objeto) em todas as funções.
+
+## Impacto das Correções
+
+Estas correções tornam os endpoints mais resilientes a:
+
+1. Mudanças na API do Supabase que podem alterar o formato de resposta
+2. Diferentes versões do PHP e suas configurações de deserialização JSON
+3. Comportamentos específicos de bibliotecas de cliente HTTP
+4. Respostas inesperadas do servidor
+
+## Aplicação em Novos Endpoints
+
+Para todos os novos endpoints REST que serão desenvolvidos, recomenda-se adotar desde o início este padrão de verificação de tipo antes de acessar propriedades. Isso evitará erros semelhantes e tornará a API mais robusta.

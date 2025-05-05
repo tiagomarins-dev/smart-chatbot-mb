@@ -76,11 +76,30 @@ class CompaniesManager {
             }
             
             // Faz a requisição para a API
+            const headers = {
+                'Authorization': `Bearer ${session.access_token}`
+            };
+            
+            // Tenta obter a API key se disponível
+            try {
+                const apiKey = localStorage.getItem('api_key');
+                if (apiKey) {
+                    headers['X-API-Key'] = apiKey;
+                    console.log('Usando API Key para autenticação');
+                    // Remover o token JWT se estamos usando API Key
+                    delete headers['Authorization'];
+                } else {
+                    console.log('Usando JWT para autenticação');
+                }
+            } catch (e) {
+                console.warn('Erro ao obter API key do localStorage:', e);
+            }
+            
+            console.log('Requisição GET para:', this.apiUrl, 'com headers:', JSON.stringify(headers));
+            
             const response = await fetch(this.apiUrl, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
-                }
+                headers: headers
             });
             
             const data = await response.json();
@@ -274,20 +293,49 @@ class CompaniesManager {
             const method = isEditing ? 'PUT' : 'POST';
             const url = isEditing ? `${this.apiUrl}/${this.currentCompanyId}` : this.apiUrl;
             
+            // Prepara os headers
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            };
+            
+            // Tenta obter a API key se disponível
+            try {
+                const apiKey = localStorage.getItem('api_key');
+                if (apiKey) {
+                    headers['X-API-Key'] = apiKey;
+                    console.log('Usando API Key para salvar empresa');
+                    // Remover o token JWT se estamos usando API Key
+                    delete headers['Authorization'];
+                }
+            } catch (e) {
+                console.warn('Erro ao obter API key do localStorage:', e);
+            }
+            
+            console.log(`Requisição ${method} para:`, url, 'com headers:', JSON.stringify(headers));
+            
             // Faz a requisição para a API
             const response = await fetch(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
+                headers: headers,
                 body: JSON.stringify(companyData)
             });
             
-            const data = await response.json();
-            
+            // Ler resposta conforme o tipo de conteúdo
+            const contentType = response.headers.get('content-type') || '';
+            let data;
+            if (contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                // Se não for JSON, mostrar texto bruto para depuração
+                const text = await response.text();
+                console.error('Resposta não-JSON ao salvar empresa:', text);
+                throw new Error('Resposta inválida do servidor');
+            }
+            // Verificar sucesso HTTP
             if (!response.ok) {
-                throw new Error(data.error || 'Erro ao salvar empresa');
+                const message = data.error?.message || data.error || 'Erro ao salvar empresa';
+                throw new Error(message);
             }
             
             // Fecha o modal
@@ -329,12 +377,31 @@ class CompaniesManager {
                 throw new Error('Você precisa estar autenticado para gerenciar empresas.');
             }
             
-            // Faz a requisição para a API
-            const response = await fetch(`${this.apiUrl}/${this.currentCompanyId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
+            // Prepara os headers
+            const headers = {
+                'Authorization': `Bearer ${session.access_token}`
+            };
+            
+            // Tenta obter a API key se disponível
+            try {
+                const apiKey = localStorage.getItem('api_key');
+                if (apiKey) {
+                    headers['X-API-Key'] = apiKey;
+                    console.log('Usando API Key para desativar empresa');
+                    // Remover o token JWT se estamos usando API Key
+                    delete headers['Authorization'];
                 }
+            } catch (e) {
+                console.warn('Erro ao obter API key do localStorage:', e);
+            }
+            
+            const url = `${this.apiUrl}/${this.currentCompanyId}`;
+            console.log('Requisição DELETE para:', url, 'com headers:', JSON.stringify(headers));
+            
+            // Faz a requisição para a API
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: headers
             });
             
             if (!response.ok) {
