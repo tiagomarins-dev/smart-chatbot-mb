@@ -1,11 +1,1626 @@
 <?php
 // Verificar se o arquivo Swagger existe
-$swaggerFile = __DIR__ . '/../../../api/swagger.json';
+// No ambiente Docker, o caminho precisa ser ajustado
+$swaggerFile = '/var/www/api/swagger.json';
+$localSwaggerFile = __DIR__ . '/../../../api/swagger.json';
 
-// Verificar se o arquivo pode ser lido
-if (!file_exists($swaggerFile) || !is_readable($swaggerFile)) {
-    // Se não conseguir acessar o arquivo JSON, incluir o conteúdo diretamente
-    $swaggerJson = <<<'JSON'
+// Adicionar comentário para debug
+echo "<!-- Docker path: $swaggerFile -->\n";
+echo "<!-- Local path: $localSwaggerFile -->\n";
+
+// Tentar o caminho Docker primeiro
+if (file_exists($swaggerFile) && is_readable($swaggerFile)) {
+    echo "<!-- Using Docker path -->\n";
+    $swaggerJson = file_get_contents($swaggerFile);
+} 
+// Tentar o caminho local como fallback
+else if (file_exists($localSwaggerFile) && is_readable($localSwaggerFile)) {
+    echo "<!-- Using local path -->\n";
+    $swaggerJson = file_get_contents($localSwaggerFile);
+} 
+// Se nenhum dos caminhos funcionar, copiar o swagger.json atualizado
+else {
+    echo "<!-- Using manual copy -->\n";
+    // Copiar o arquivo swagger.json atualizado diretamente da string
+    $swaggerJson = <<<'JSON_UPDATED'
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Smart-ChatBox API",
+    "description": "API para gerenciamento de WhatsApp, empresas, projetos e leads.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Tiago Marins",
+      "url": "https://github.com/tiagomarins-dev/smart-chatbot-mb"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Servidor de produção"
+    },
+    {
+      "url": "http://localhost/api",
+      "description": "Servidor local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Operações de autenticação"
+    },
+    {
+      "name": "messages",
+      "description": "Gerenciamento de mensagens do WhatsApp"
+    },
+    {
+      "name": "contacts",
+      "description": "Gerenciamento de contatos"
+    },
+    {
+      "name": "webhooks",
+      "description": "Gerenciamento de webhooks"
+    },
+    {
+      "name": "companies",
+      "description": "Gerenciamento de empresas"
+    },
+    {
+      "name": "projects",
+      "description": "Gerenciamento de projetos"
+    },
+    {
+      "name": "system",
+      "description": "Operações relacionadas ao sistema"
+    }
+  ],
+  "paths": {
+    "/v1/auth": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Autenticar usuário",
+        "description": "Autentica um usuário com email e senha ou obtém um token através de uma chave API",
+        "operationId": "authenticate",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Ação de autenticação (login, token)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["login", "token"]
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Credenciais do usuário",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/LoginCredentials"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ApiCredentials"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticação bem-sucedida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies": {
+      "get": {
+        "tags": ["companies"],
+        "summary": "Listar empresas",
+        "description": "Retorna a lista de empresas do usuário autenticado",
+        "operationId": "getCompanies",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID da empresa (opcional)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de empresas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "companies": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Company"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["companies"],
+        "summary": "Criar empresa",
+        "description": "Cria uma nova empresa",
+        "operationId": "createCompany",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Dados da empresa",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Empresa criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "company": {
+                      "$ref": "#/components/schemas/Company"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/companies/{id}": {
+      "put": {
+        "tags": ["companies"],
+        "summary": "Atualizar empresa",
+        "description": "Atualiza uma empresa existente",
+        "operationId": "updateCompany",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID da empresa",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Dados da empresa",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyUpdateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Empresa atualizada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "company": {
+                      "$ref": "#/components/schemas/Company"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["companies"],
+        "summary": "Desativar empresa",
+        "description": "Desativa uma empresa existente (soft delete)",
+        "operationId": "deactivateCompany",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID da empresa",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Empresa desativada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Empresa desativada com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "tags": ["projects"],
+        "summary": "Listar projetos",
+        "description": "Retorna a lista de projetos do usuário autenticado. É necessário fornecer o ID da empresa para filtrar os projetos.",
+        "operationId": "getProjects",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "query",
+            "description": "ID da empresa para filtrar projetos (obrigatório)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID do projeto (opcional)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de projetos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "projects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Project"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["projects"],
+        "summary": "Criar projeto",
+        "description": "Cria um novo projeto vinculado a uma empresa",
+        "operationId": "createProject",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Dados do projeto",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Projeto criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "$ref": "#/components/schemas/Project"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Projeto criado com sucesso"
+                    },
+                    "details": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Campanha de Verão"
+                        },
+                        "company": {
+                          "type": "string",
+                          "example": "Milla Borges"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "example": "04/05/2025 14:30:00"
+                        },
+                        "campaign": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "example": "01/06/2025"
+                            },
+                            "end": {
+                              "type": "string",
+                              "example": "31/08/2025"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/{id}": {
+      "put": {
+        "tags": ["projects"],
+        "summary": "Atualizar projeto",
+        "description": "Atualiza um projeto existente",
+        "operationId": "updateProject",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do projeto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Dados do projeto",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Projeto atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "$ref": "#/components/schemas/Project"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Projeto atualizado com sucesso"
+                    },
+                    "details": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "Campanha de Verão 2025"
+                        },
+                        "company": {
+                          "type": "string",
+                          "example": "Milla Borges"
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "example": "04/05/2025 15:45:22"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "Ativo"
+                        },
+                        "campaign": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "example": "01/06/2025"
+                            },
+                            "end": {
+                              "type": "string",
+                              "example": "15/09/2025"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Projeto não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["projects"],
+        "summary": "Desativar projeto",
+        "description": "Desativa um projeto existente (soft delete)",
+        "operationId": "deactivateProject",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do projeto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projeto desativado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Projeto desativado com sucesso"
+                    },
+                    "details": {
+                      "type": "object",
+                      "properties": {
+                        "project_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "project_name": {
+                          "type": "string",
+                          "example": "Campanha de Verão"
+                        },
+                        "company": {
+                          "type": "string",
+                          "example": "Milla Borges"
+                        },
+                        "deactivated_at": {
+                          "type": "string",
+                          "example": "04/05/2025 16:30:00"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Projeto não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/messages": {
+      "get": {
+        "tags": ["messages"],
+        "summary": "Listar mensagens",
+        "description": "Retorna a lista de mensagens do WhatsApp",
+        "operationId": "getMessages",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "description": "Número de telefone para filtrar mensagens",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número máximo de mensagens por número",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de mensagens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messages": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/Message"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["messages"],
+        "summary": "Enviar mensagem",
+        "description": "Envia uma mensagem do WhatsApp",
+        "operationId": "sendMessage",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Dados da mensagem",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mensagem enviada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "to": {
+                      "type": "string",
+                      "example": "5511999999999"
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "example": "3EB01234567890F234C"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/contacts": {
+      "get": {
+        "tags": ["contacts"],
+        "summary": "Listar contatos",
+        "description": "Retorna a lista de contatos do WhatsApp",
+        "operationId": "getContacts",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "phone",
+            "in": "query",
+            "description": "Número de telefone para filtrar contatos",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de contatos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contacts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Contact"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/test-connection": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Testar conexão com o Supabase",
+        "description": "Verifica se a conexão com o banco de dados Supabase está funcionando corretamente",
+        "operationId": "testConnection",
+        "responses": {
+          "200": {
+            "description": "Conexão bem-sucedida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Conexão com Supabase estabelecida com sucesso"
+                    },
+                    "database_info": {
+                      "type": "object",
+                      "properties": {
+                        "db": {
+                          "type": "string",
+                          "example": "postgres"
+                        },
+                        "user": {
+                          "type": "string",
+                          "example": "postgres"
+                        },
+                        "version": {
+                          "type": "string",
+                          "example": "PostgreSQL 15.1 on x86_64-pc-linux-gnu..."
+                        }
+                      }
+                    },
+                    "config": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "example": "https://gciezqjeaehrtihqjihz.supabase.co"
+                        },
+                        "project_id": {
+                          "type": "string",
+                          "example": "gciezqjeaehrtihqjihz"
+                        },
+                        "host": {
+                          "type": "string",
+                          "example": "db.gciezqjeaehrtihqjihz.supabase.co"
+                        },
+                        "database": {
+                          "type": "string",
+                          "example": "postgres"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro na conexão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro ao conectar com Supabase"
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Configuração do Supabase incompleta: SUPABASE_SERVICE_ROLE_KEY não definida"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks": {
+      "get": {
+        "tags": ["webhooks"],
+        "summary": "Listar webhooks",
+        "description": "Retorna a lista de webhooks configurados",
+        "operationId": "getWebhooks",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de webhooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhooks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Webhook"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["webhooks"],
+        "summary": "Criar webhook",
+        "description": "Cria um novo webhook",
+        "operationId": "createWebhook",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Dados do webhook",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhook": {
+                      "$ref": "#/components/schemas/Webhook"
+                    },
+                    "secret_token": {
+                      "type": "string",
+                      "description": "Token secreto (exibido apenas uma vez)",
+                      "example": "whsec_abc123def456"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido através do endpoint de autenticação"
+      },
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Chave API obtida na página de integrações"
+      }
+    },
+    "schemas": {
+      "LoginCredentials": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "usuario@exemplo.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "senha123"
+          }
+        }
+      },
+      "ApiCredentials": {
+        "type": "object",
+        "required": ["key", "secret"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "key_abc123def456"
+          },
+          "secret": {
+            "type": "string",
+            "example": "secret_xyz789uvw123"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "expires_in": {
+            "type": "integer",
+            "example": 3600
+          },
+          "token_type": {
+            "type": "string",
+            "example": "Bearer"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "example": "123e4567-e89b-12d3-a456-426614174000"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "example": "usuario@exemplo.com"
+              }
+            }
+          }
+        }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "Milla Borges"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          }
+        }
+      },
+      "CompanyInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Milla Borges"
+          }
+        }
+      },
+      "CompanyUpdateInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Milla Borges"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3EB01234567890F234C"
+          },
+          "body": {
+            "type": "string",
+            "example": "Olá, como vai?"
+          },
+          "fromMe": {
+            "type": "boolean",
+            "example": false
+          },
+          "fromOtherDevice": {
+            "type": "boolean",
+            "example": false
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          },
+          "type": {
+            "type": "string",
+            "example": "chat"
+          }
+        }
+      },
+      "MessageInput": {
+        "type": "object",
+        "required": ["phone_number", "message_content"],
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "example": "5511999999999"
+          },
+          "message_content": {
+            "type": "string",
+            "example": "Olá, como vai?"
+          }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "5511999999999@c.us"
+          },
+          "name": {
+            "type": "string",
+            "example": "João Silva"
+          },
+          "number": {
+            "type": "string",
+            "example": "5511999999999"
+          },
+          "profilePicture": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://exemplo.com/foto.jpg"
+          },
+          "isGroup": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "Notificações de Mensagens"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://meu-app.com/webhook"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["message.received", "message.sent"]
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          },
+          "last_triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:30:00Z"
+          }
+        }
+      },
+      "WebhookInput": {
+        "type": "object",
+        "required": ["name", "url", "events"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Notificações de Mensagens"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://meu-app.com/webhook"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["message.received", "message.sent"]
+          },
+          "generate_secret": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "Campanha de Verão"
+          },
+          "description": {
+            "type": "string",
+            "example": "Campanha de marketing para o verão de 2025"
+          },
+          "campaign_start_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-06-01"
+          },
+          "campaign_end_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-08-31"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          }
+        }
+      },
+      "ProjectInput": {
+        "type": "object",
+        "required": ["name", "company_id"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Campanha de Verão"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "description": {
+            "type": "string",
+            "example": "Campanha de marketing para o verão de 2025"
+          },
+          "campaign_start_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-06-01"
+          },
+          "campaign_end_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-08-31"
+          }
+        }
+      },
+      "ProjectUpdateInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Campanha de Verão 2025"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "description": {
+            "type": "string",
+            "example": "Campanha de marketing atualizada para o verão de 2025"
+          },
+          "campaign_start_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-06-01"
+          },
+          "campaign_end_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-09-15"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Mensagem de erro"
+          }
+        }
+      }
+    }
+  }
+}
+JSON_UPDATED;
+    
+    // Log de debug
+    echo "<!-- Swagger file size: " . strlen($swaggerJson) . " bytes -->\n";
+    echo "<!-- Swagger contains projects tag: " . (strpos($swaggerJson, '"name":"projects"') !== false ? "yes" : "no") . " -->\n";
+    
+    // JSON usado apenas se o arquivo não puder ser lido (não deve acontecer agora)
+    $fallbackSwaggerJson = <<<'JSON'
 {
   "openapi": "3.0.0",
   "info": {
@@ -986,16 +2601,13 @@ if (!file_exists($swaggerFile) || !is_readable($swaggerFile)) {
   }
 }
 JSON;
-} else {
-    // Carregar o arquivo Swagger
-    $swaggerJson = file_get_contents($swaggerFile);
 }
 
 // Verificar se é um JSON válido
 $swagger = json_decode($swaggerJson);
 if (json_last_error() !== JSON_ERROR_NONE) {
     http_response_code(500);
-    echo "Erro ao analisar a documentação Swagger";
+    echo "Erro ao analisar a documentação Swagger: " . json_last_error_msg();
     exit;
 }
 

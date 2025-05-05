@@ -119,18 +119,31 @@ class SupabaseClient {
      * @return SupabaseClient
      */
     public static function getInstance($keyType = 'service_role', array $options = []) {
-        require_once __DIR__ . '/../config/supabase.php';
-        
         // Carregar configuração
         $supabaseConfig = require __DIR__ . '/../config/supabase.php';
+        
+        error_log('SupabaseClient: Criando instância com keyType: ' . $keyType);
         
         if ($keyType === 'service_role') {
             $key = $supabaseConfig['service_role_key'];
             
             // Verificar chave
             if (empty($key)) {
-                error_log('ERRO: SUPABASE_SERVICE_ROLE_KEY não está definida no arquivo de configuração');
-                throw new Exception('Chave de serviço do Supabase não definida');
+                error_log('ERRO CRÍTICO: SUPABASE_SERVICE_ROLE_KEY não está definida no arquivo de configuração');
+                error_log('Valores disponíveis: URL=' . (empty($supabaseConfig['url']) ? 'VAZIA' : 'DEFINIDA'));
+                error_log('Valores disponíveis: ANON_KEY=' . (empty($supabaseConfig['key']) ? 'VAZIA' : 'DEFINIDA'));
+                error_log('Valores disponíveis: JWT_SECRET=' . (empty($supabaseConfig['jwt_secret']) ? 'VAZIA' : 'DEFINIDA'));
+                
+                // Tentar ler diretamente do ambiente
+                $envKey = getenv('SUPABASE_SERVICE_ROLE_KEY');
+                if (!empty($envKey)) {
+                    error_log('Recuperando SUPABASE_SERVICE_ROLE_KEY diretamente do ambiente: ' . substr($envKey, 0, 10) . '...');
+                    $key = $envKey;
+                } else {
+                    throw new Exception('Chave de serviço do Supabase não definida');
+                }
+            } else {
+                error_log('SupabaseClient: Service Role Key obtida da configuração: ' . substr($key, 0, 10) . '...');
             }
         } else {
             $key = $supabaseConfig['key']; // Chave anônima
@@ -139,6 +152,8 @@ class SupabaseClient {
             if (empty($key)) {
                 error_log('ERRO: SUPABASE_ANON_KEY não está definida no arquivo de configuração');
                 throw new Exception('Chave anônima do Supabase não definida');
+            } else {
+                error_log('SupabaseClient: Anon Key obtida da configuração: ' . substr($key, 0, 10) . '...');
             }
         }
         
@@ -148,6 +163,8 @@ class SupabaseClient {
             'key' => $key,
             'options' => $options
         ];
+        
+        error_log('SupabaseClient: Configuração criada - URL: ' . substr($config['url'], 0, 15) . '..., Key: ' . substr($config['key'], 0, 10) . '...');
         
         return new self($config);
     }
@@ -505,15 +522,17 @@ class SupabaseClient {
      */
     private function request($method, $url, $data = null) {
         // Configurar contexto da requisição
+        // Configurar contexto da requisição HTTP
         $options = [
             'http' => [
                 'method' => $method,
+                // Cabeçalhos para autenticação na API REST do Supabase
                 'header' => [
                     'Content-Type: application/json',
                     'apikey: ' . $this->key,
                     'Authorization: Bearer ' . $this->key
                 ],
-                'ignore_errors' => true, // Não lançar exceção em caso de erro HTTP
+                'ignore_errors' => true,
                 'timeout' => $this->options['timeout']
             ]
         ];
@@ -574,55 +593,39 @@ class SupabaseClient {
                     continue;
                 }
                 
+                // Para depuração, registra propriedades importantes da resposta
+                if ($this->options['debug']) {
+                    error_log('SupabaseClient: Resposta recebida - código HTTP: ' . $statusCode);
+                    error_log('SupabaseClient: Resposta JSON válida: ' . (json_last_error() === JSON_ERROR_NONE ? 'Sim' : 'Não'));
+                    if (is_object($responseData) && isset($responseData->message)) {
+                        error_log('SupabaseClient: Mensagem de resposta: ' . $responseData->message);
+                    }
+                }
+                
                 // Criar objeto de resposta
-                return new class($responseData, $statusCode, $requestTime, $responseHeaders) {
-                    private $data;
-                    private $statusCode;
-                    private $requestTime;
-                    private $headers;
-                    private $error;
+                $responseObject = new stdClass();
+                $responseObject->data = $responseData;
+                $responseObject->statusCode = $statusCode;
+                $responseObject->requestTime = $requestTime;
+                $responseObject->headers = $responseHeaders;
+                $responseObject->error = null;
+                
+                // Verificar se houve erro
+                if ($statusCode >= 400) {
+                    $errorMsg = is_object($responseData) && isset($responseData->message) 
+                        ? $responseData->message 
+                        : "Erro HTTP $statusCode";
                     
-                    public function __construct($data, $statusCode, $requestTime, $headers) {
-                        $this->data = $data;
-                        $this->statusCode = $statusCode;
-                        $this->requestTime = $requestTime;
-                        $this->headers = $headers;
-                        $this->error = null;
-                        
-                        // Verificar se houve erro
-                        if ($statusCode >= 400) {
-                            $errorMsg = is_object($data) && isset($data->message) 
-                                ? $data->message 
-                                : "Erro HTTP $statusCode";
-                            
-                            $this->error = new Exception($errorMsg, $statusCode);
-                        }
-                    }
+                    $responseObject->error = new Exception($errorMsg, $statusCode);
                     
-                    public function getError() {
-                        return $this->error;
+                    if ($this->options['debug']) {
+                        error_log('SupabaseClient: Erro encontrado na resposta: ' . $errorMsg);
                     }
-                    
-                    public function getData() {
-                        return $this->data;
-                    }
-                    
-                    public function getStatusCode() {
-                        return $this->statusCode;
-                    }
-                    
-                    public function getRequestTime() {
-                        return $this->requestTime;
-                    }
-                    
-                    public function getHeaders() {
-                        return $this->headers;
-                    }
-                    
-                    public function isSuccess() {
-                        return $this->statusCode >= 200 && $this->statusCode < 300;
-                    }
-                };
+                }
+                
+                // Não precisamos adicionar métodos como funções anônimas no PHP
+                
+                return $responseObject;
             } catch (Exception $e) {
                 $lastError = $e->getMessage();
                 

@@ -11,8 +11,34 @@ class AuthService {
       });
       
       if (error) throw error;
+      
       // Atualizar o estado de autenticação no sessionStorage
       sessionStorage.setItem('isAuthenticated', 'true');
+      
+      // Tentar obter API key do usuário
+      try {
+        // Usar o token para obter a API key através de uma chamada adicional
+        // Este código assume que existe um endpoint para isso - atualize conforme necessário
+        const userApiKeyResponse = await fetch('/api/v1/auth', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.session.access_token}`
+          }
+        });
+        
+        if (userApiKeyResponse.ok) {
+          const apiKeyData = await userApiKeyResponse.json();
+          if (apiKeyData && apiKeyData.api_key) {
+            console.log('API Key obtida com sucesso');
+            // Armazenar API key no localStorage
+            localStorage.setItem('api_key', apiKeyData.api_key);
+          }
+        }
+      } catch (apiKeyError) {
+        console.warn('Erro ao obter API key durante login:', apiKeyError);
+        // Não interromper o fluxo de login por falha na obtenção da API key
+      }
+      
       return { user: data.user, session: data.session };
     } catch (error) {
       console.error('Erro no login:', error.message);
@@ -44,8 +70,18 @@ class AuthService {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
       // Limpar o estado de autenticação no sessionStorage
       sessionStorage.removeItem('isAuthenticated');
+      
+      // Limpar a API key no localStorage
+      try {
+        localStorage.removeItem('api_key');
+        console.log('API Key removida durante logout');
+      } catch (e) {
+        console.warn('Erro ao remover API key durante logout:', e);
+      }
+      
       return true;
     } catch (error) {
       console.error('Erro no logout:', error.message);

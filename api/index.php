@@ -60,8 +60,15 @@ set_exception_handler(function($exception) {
 });
 
 // Obter o caminho da requisição
-$path = $_SERVER['PATH_INFO'] ?? '/';
+$path = $_SERVER['PATH_INFO'] ?? $_SERVER['REQUEST_URI'] ?? '/';
+// Remover prefixo /api/ se existir
+$path = preg_replace('|^/api/|', '', $path);
 $path = trim($path, '/');
+
+// Log para depuração
+error_log('Request Path: ' . $path);
+error_log('REQUEST_URI: ' . $_SERVER['REQUEST_URI']);
+error_log('PATH_INFO: ' . ($_SERVER['PATH_INFO'] ?? 'não definido'));
 
 // Verificar versão da API
 if (strpos($path, 'v1/') === 0) {
@@ -107,8 +114,12 @@ if ($endpoint === '' || $endpoint === 'status') {
     exit;
 }
 
+// Extrair o endpoint base (antes de qualquer ID ou parâmetro)
+$endpointBase = explode('/', $endpoint)[0];
+error_log('Endpoint Base: ' . $endpointBase);
+
 // Router para os endpoints disponíveis
-$endpointFile = __DIR__ . '/v1/' . $endpoint . '.php';
+$endpointFile = __DIR__ . '/v1/' . $endpointBase . '.php';
 
 if (file_exists($endpointFile)) {
     // Executar o endpoint
