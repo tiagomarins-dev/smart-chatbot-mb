@@ -140,6 +140,7 @@ http://localhost:9030
 
 ## API
 
+### API WhatsApp
 - `GET /api/status` - Verifica o status da conexão
 - `GET /api/qrcode` - Obtém o QR code para conexão
 - `POST /api/connect` - Inicia o processo de conexão
@@ -148,6 +149,31 @@ http://localhost:9030
 - `GET /api/messages` - Obtém todas as mensagens
 - `GET /api/messages/:number` - Obtém mensagens de um número específico
 - `DELETE /api/messages` - Limpa todas as mensagens armazenadas
+
+### API Empresas
+- `GET /api/v1/companies` - Lista todas as empresas
+- `GET /api/v1/companies?id={id}` - Busca uma empresa específica
+- `POST /api/v1/companies` - Cria uma nova empresa
+- `PUT /api/v1/companies/{id}` - Atualiza uma empresa existente
+- `DELETE /api/v1/companies/{id}` - Desativa uma empresa (soft delete)
+
+### API Projetos
+- `GET /api/v1/projects?company_id={company_id}` - Lista projetos de uma empresa
+- `GET /api/v1/projects?id={id}` - Busca um projeto específico
+- `POST /api/v1/projects` - Cria um novo projeto
+- `PUT /api/v1/projects/{id}` - Atualiza um projeto existente
+- `DELETE /api/v1/projects/{id}` - Desativa um projeto (soft delete)
+
+### API Leads
+- `GET /api/v1/leads` - Lista todos os leads
+- `GET /api/v1/leads?id={id}` - Busca um lead específico
+- `GET /api/v1/leads?project_id={project_id}` - Lista leads de um projeto
+- `GET /api/v1/leads?email={email}` - Busca um lead pelo email
+- `POST /api/v1/leads` - Captura um novo lead
+- `PUT /api/v1/leads/{id}/status` - Atualiza o status de um lead
+- `GET /api/v1/leads/stats` - Obtém estatísticas de leads
+
+Para mais detalhes, consulte a documentação Swagger em `/api/docs.php`.
 
 ## Licença
 

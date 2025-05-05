@@ -45,6 +45,10 @@
       "description": "Gerenciamento de projetos"
     },
     {
+      "name": "leads",
+      "description": "Gerenciamento de leads"
+    },
+    {
       "name": "system",
       "description": "Operações relacionadas ao sistema"
     }
@@ -1067,6 +1071,485 @@
         }
       }
     },
+    "/v1/leads/stats": {
+      "get": {
+        "tags": ["leads"],
+        "summary": "Estatísticas de leads",
+        "description": "Retorna estatísticas dos leads, como total, novos leads no período, distribuição por status e origem",
+        "operationId": "getLeadStats",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "description": "ID do projeto para filtrar estatísticas (opcional)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Período em dias para análise (padrão: 30)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas de leads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "total_leads": {
+                          "type": "integer",
+                          "example": 157
+                        },
+                        "new_leads_period": {
+                          "type": "integer",
+                          "example": 42
+                        },
+                        "leads_by_status": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "novo": 45,
+                            "qualificado": 32,
+                            "convertido": 25
+                          }
+                        },
+                        "leads_by_source": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "google": 25,
+                            "facebook": 15,
+                            "instagram": 18,
+                            "desconhecida": 9
+                          }
+                        },
+                        "leads_by_day": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string",
+                                "format": "date",
+                                "example": "2025-04-15"
+                              },
+                              "count": {
+                                "type": "integer",
+                                "example": 5
+                              }
+                            }
+                          }
+                        },
+                        "conversion_rate": {
+                          "type": "number",
+                          "format": "float",
+                          "example": 2.37
+                        }
+                      }
+                    },
+                    "period_days": {
+                      "type": "integer",
+                      "example": 30
+                    },
+                    "project_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "example": "123e4567-e89b-12d3-a456-426614174000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leads/{id}": {
+      "put": {
+        "tags": ["leads"],
+        "summary": "Atualizar lead",
+        "description": "Atualiza um lead, incluindo status, nome, telefone e notas (exceto email)",
+        "operationId": "updateLead",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do lead",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Dados de atualização do lead",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "description": "Novo status do lead",
+                    "enum": ["novo", "qualificado", "contatado", "convertido", "desistiu", "inativo"],
+                    "example": "qualificado"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nome completo do lead",
+                    "example": "João da Silva"
+                  },
+                  "first_name": {
+                    "type": "string",
+                    "description": "Primeiro nome do lead",
+                    "example": "João"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Telefone do lead",
+                    "example": "5521999998877"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Notas opcionais sobre o lead",
+                    "example": "Lead qualificado após contato telefônico"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lead atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Lead atualizado com sucesso"
+                    },
+                    "lead_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "lead_name": {
+                      "type": "string",
+                      "example": "João da Silva"
+                    },
+                    "lead_email": {
+                      "type": "string",
+                      "example": "joao@exemplo.com"
+                    },
+                    "previous_status": {
+                      "type": "string",
+                      "example": "novo"
+                    },
+                    "new_status": {
+                      "type": "string",
+                      "example": "qualificado"
+                    },
+                    "changes": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "phone": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "status": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "notes": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "example": "04/05/2025 15:30:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leads": {
+      "get": {
+        "tags": ["leads"],
+        "summary": "Listar leads",
+        "description": "Retorna a lista de leads",
+        "operationId": "getLeads",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "description": "ID do projeto para filtrar leads",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "description": "ID do lead (opcional)",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Email do lead (opcional)",
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de leads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "leads": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Lead"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["leads"],
+        "summary": "Capturar lead",
+        "description": "Cria um novo lead e o associa a um projeto",
+        "operationId": "captureLead",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Dados do lead",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Lead capturado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lead": {
+                      "$ref": "#/components/schemas/Lead"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Lead capturado com sucesso"
+                    },
+                    "details": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "João da Silva"
+                        },
+                        "project": {
+                          "type": "string",
+                          "example": "Campanha de Verão"
+                        },
+                        "captured_at": {
+                          "type": "string",
+                          "example": "04/05/2025 14:30:00"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Projeto não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/webhooks": {
       "get": {
         "tags": ["webhooks"],
@@ -1573,6 +2056,103 @@
           "is_active": {
             "type": "boolean",
             "example": true
+          }
+        }
+      },
+      "Lead": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "João da Silva"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "João"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "email@joao.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "5521999998877"
+          },
+          "status": {
+            "type": "string",
+            "example": "novo"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Lead interessado em serviço premium"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-04T12:00:00Z"
+          }
+        }
+      },
+      "LeadInput": {
+        "type": "object",
+        "required": ["project_id", "name", "email", "phone"],
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "name": {
+            "type": "string",
+            "example": "João da Silva"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "João"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "email@joao.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "5521999998877"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Lead interessado em serviço premium"
+          },
+          "utm_source": {
+            "type": "string",
+            "example": "google"
+          },
+          "utm_medium": {
+            "type": "string",
+            "example": "cpc"
+          },
+          "utm_campaign": {
+            "type": "string",
+            "example": "summer_promo"
+          },
+          "utm_term": {
+            "type": "string",
+            "example": "marketing digital"
+          },
+          "utm_content": {
+            "type": "string",
+            "example": "banner_top"
           }
         }
       },

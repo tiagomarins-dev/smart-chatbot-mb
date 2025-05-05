@@ -101,3 +101,234 @@ Estas correções tornam os endpoints mais resilientes a:
 ## Aplicação em Novos Endpoints
 
 Para todos os novos endpoints REST que serão desenvolvidos, recomenda-se adotar desde o início este padrão de verificação de tipo antes de acessar propriedades. Isso evitará erros semelhantes e tornará a API mais robusta.
+
+## Erro: "Método execute não disponível" na API de Leads
+
+**Problema:** A API retornava erro 500 com a mensagem "Método execute não disponível" ao tentar criar um lead.
+
+**Causa:** O código em leads.php esperava que o SupabaseClient retornasse objetos com um método execute(), mas o cliente retorna stdClass simples sem esse método.
+
+**Solução:** Modificamos o código para verificar se o objeto retornado tem o método execute() e, caso contrário, usar o objeto diretamente como resposta. Implementamos múltiplas verificações para extrair dados corretamente independentemente do formato da resposta.
+
+**Arquivos corrigidos:** 
+- `/api/v1/leads.php`
+
+**Data da correção:** 5 de maio de 2025
+
+**Benefícios:** 
+1. API de leads funciona corretamente
+2. Melhor tratamento de diferentes formatos de resposta
+3. Logs detalhados para debug
+4. Código mais robusto para lidar com variações na API do Supabase
+
+**Observações:**
+Este padrão pode ser aplicado a outros endpoints que possivelmente enfrentam o mesmo problema. A chave é sempre verificar o tipo de objeto retornado e implementar diferentes estratégias para acessar seus dados.
+
+**Código de solução:**
+```php
+// Verificar se o objeto tem o método execute
+if (is_object($insertQuery) && method_exists($insertQuery, 'execute')) {
+    $response = $insertQuery->execute();
+} else {
+    // Quando o insertQuery é direto (sem método execute), ele já é a resposta da operação
+    $response = $insertQuery;
+    
+    // Para debug
+    error_log('Tipo da resposta direta: ' . gettype($response));
+    if (is_object($response)) {
+        error_log('Classe da resposta: ' . get_class($response));
+        error_log('Propriedades disponíveis: ' . implode(', ', array_keys((array)$response)));
+    }
+}
+```
+
+## Erro: "Erro ao obter ID do lead criado"
+
+**Problema:** Após a correção do erro "Método execute não disponível", em algumas situações a API retornava um erro 500 com a mensagem "Erro ao obter ID do lead criado".
+
+**Causa:** O código não estava processando corretamente todos os possíveis formatos de resposta que o Supabase pode retornar após uma inserção bem-sucedida. A estrutura de dados retornada pode variar significativamente dependendo da configuração e da versão do Supabase.
+
+**Solução:** Implementamos uma abordagem mais robusta para extrair o ID do lead criado, considerando múltiplos formatos possíveis de resposta.
+
+**Arquivos corrigidos:** 
+- `/api/v1/leads.php`
+
+**Data da correção:** 5 de maio de 2025
+
+**Código de solução:**
+```php
+// Obter o ID do lead criado - tratando todos os formatos possíveis
+if (is_array($responseData) && !empty($responseData)) {
+    // Formato 1: Array com objetos/arrays
+    if (isset($responseData[0]['id'])) {
+        $leadId = $responseData[0]['id'];
+    } elseif (isset($responseData[0]) && is_object($responseData[0]) && isset($responseData[0]->id)) {
+        $leadId = $responseData[0]->id;
+    }
+} elseif (is_object($responseData)) {
+    // Formato 2: Objeto direto com ID
+    if (isset($responseData->id)) {
+        $leadId = $responseData->id;
+    } 
+    // Formato 3: Objeto com array 'data'
+    elseif (isset($responseData->data) && is_array($responseData->data) && !empty($responseData->data)) {
+        if (isset($responseData->data[0]->id)) {
+            $leadId = $responseData->data[0]->id;
+        } elseif (isset($responseData->data[0]['id'])) {
+            $leadId = $responseData->data[0]['id'];
+        }
+    }
+} 
+// Formato 4: Acessar diretamente a propriedade data da resposta
+elseif (is_object($response) && isset($response->data)) {
+    if (is_array($response->data) && !empty($response->data)) {
+        // Array de objetos/arrays
+        if (isset($response->data[0]->id)) {
+            $leadId = $response->data[0]->id;
+        } elseif (isset($response->data[0]['id'])) {
+            $leadId = $response->data[0]['id'];
+        }
+    } elseif (is_object($response->data) && isset($response->data->id)) {
+        // Objeto único
+        $leadId = $response->data->id;
+    }
+}
+
+// Formato 5: Supabase às vezes retorna um formato específico para inserções
+if (!$leadId && is_object($response) && isset($response->statusCode) && $response->statusCode == 201) {
+    // Tenta encontrar algo no formato específico do Supabase
+    if (isset($response->data)) {
+        $data = $response->data;
+        // Se data é um objeto único
+        if (is_object($data) && isset($data->id)) {
+            $leadId = $data->id;
+        }
+        // Se data é um array com um objeto
+        elseif (is_array($data) && isset($data[0])) {
+            if (is_object($data[0]) && isset($data[0]->id)) {
+                $leadId = $data[0]->id;
+            } elseif (is_array($data[0]) && isset($data[0]['id'])) {
+                $leadId = $data[0]['id'];
+            }
+        }
+    }
+}
+```
+
+**Benefícios:** 
+1. Tratamento robusto para diversos formatos de resposta possíveis
+2. Logs detalhados para depuração quando o ID não é encontrado
+3. Compatibilidade com diferentes versões do Supabase e configurações
+4. Abordagem que cobre diversos casos de uso 
+
+**Considerações para outros endpoints:**
+Esta abordagem de multiplos formatos deve ser aplicada a qualquer endpoint que precise extrair dados específicos de respostas do Supabase, especialmente em operações de inserção e atualização.
+
+## Erro: "Cannot use object of type stdClass as array"
+
+**Problema:** A API retornava um erro 500 com a mensagem "Cannot use object of type stdClass as array" ao tentar criar um lead.
+
+**Causa:** O código estava tentando acessar propriedades de objetos stdClass usando a sintaxe de array (`$object[0]['id']` em vez de `$object->data[0]->id` ou verificar o tipo antes). Isso ocorria em vários pontos, mas principalmente ao processar resposta de consultas no Supabase.
+
+**Solução:** Modificamos o código para verificar adequadamente os tipos antes de acessar as propriedades, tratando tanto arrays quanto objetos stdClass.
+
+**Arquivos corrigidos:** 
+- `/api/v1/leads.php`
+- `/api/models/SupabaseClient.php`
+
+**Data da correção:** 5 de maio de 2025
+
+**Principais alterações:**
+
+1. Tratamento seguro de tipos em verificações de leads existentes:
+```php
+if (is_array($leadData) && !empty($leadData)) {
+    if (isset($leadData[0])) {
+        if (is_array($leadData[0]) && isset($leadData[0]['id'])) {
+            $leadId = $leadData[0]['id'];
+            $existingLead = true;
+        } elseif (is_object($leadData[0]) && isset($leadData[0]->id)) {
+            $leadId = $leadData[0]->id;
+            $existingLead = true;
+        }
+    }
+} elseif (is_object($leadData)) {
+    // Caso seja um objeto stdClass
+    if (isset($leadData->id)) {
+        $leadId = $leadData->id;
+        $existingLead = true;
+    } elseif (isset($leadData->data)) {
+        // Processar a propriedade data com verificações adicionais
+    }
+}
+```
+
+2. Implementação da função auxiliar `findIdInObject` para busca recursiva:
+```php
+/**
+ * Função recursiva para buscar um ID em qualquer estrutura de objeto
+ * 
+ * @param mixed $obj Objeto ou array a ser inspecionado
+ * @param int $depth Profundidade atual da recursão
+ * @return string|null ID encontrado ou null se não encontrar
+ */
+function findIdInObject($obj, $depth = 0) {
+    // Evitar recursão infinita
+    if ($depth > 10) return null;
+    
+    // Caso base
+    if ($obj === null || is_scalar($obj)) {
+        if (is_string($obj) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $obj)) {
+            return $obj; // Parece ser um UUID
+        }
+        return null;
+    }
+    
+    // Caso objeto
+    if (is_object($obj)) {
+        if (isset($obj->id)) return $obj->id;
+        
+        foreach ((array)$obj as $key => $value) {
+            // Recursão para propriedades
+            $foundId = findIdInObject($value, $depth + 1);
+            if ($foundId) return $foundId;
+        }
+    }
+    
+    // Caso array
+    if (is_array($obj)) {
+        if (isset($obj['id'])) return $obj['id'];
+        
+        foreach ($obj as $value) {
+            // Recursão para elementos
+            $foundId = findIdInObject($value, $depth + 1);
+            if ($foundId) return $foundId;
+        }
+    }
+    
+    return null;
+}
+```
+
+3. Remoção de timestamps automáticos no SupabaseClient:
+```php
+// Remoção do código que adicionava timestamps no método insert()
+// Em vez de:
+if (!isset($data['created_at'])) {
+    $data['created_at'] = date('c');
+}
+if (!isset($data['updated_at'])) {
+    $data['updated_at'] = date('c');
+}
+
+// Deixamos o PostgreSQL gerenciar esses campos com seus valores padrão
+```
+
+**Benefícios:**
+1. Código mais robusto para lidar com diferentes tipos de respostas
+2. Evita erros de tipo ao acessar propriedades
+3. Melhor compatibilidade com diferentes versões do Supabase
+4. Eliminação de erros relacionados a colunas não encontradas no schema
+
+**Observações:**
+Esta abordagem mais defensiva em relação à verificação de tipos deve ser implementada em todos os endpoints que interagem com o Supabase, especialmente quando processando respostas de consultas, inserções ou atualizações.

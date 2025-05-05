@@ -357,13 +357,9 @@ class SupabaseClient {
             throw new Exception('Tabela não definida. Use o método from() primeiro.');
         }
         
-        // Adicionar timestamps padrão, se não fornecidos
-        if (!isset($data['created_at'])) {
-            $data['created_at'] = date('c');
-        }
-        if (!isset($data['updated_at'])) {
-            $data['updated_at'] = date('c');
-        }
+        // IMPORTANTE: Removido adicionar timestamps automaticamente
+        // Deixamos essa responsabilidade para o Supabase/PostgreSQL
+        // que irá usar os valores default definidos na tabela
         
         // Construir a URL
         $endpoint = $this->url . '/rest/v1/' . $this->table;
@@ -393,10 +389,9 @@ class SupabaseClient {
             throw new Exception('Tabela não definida. Use o método from() primeiro.');
         }
         
-        // Adicionar timestamp de atualização, se não fornecido
-        if (!isset($data['updated_at'])) {
-            $data['updated_at'] = date('c');
-        }
+        // IMPORTANTE: Removido adicionar timestamps automaticamente
+        // Deixamos essa responsabilidade para o Supabase/PostgreSQL
+        // que irá usar os valores default definidos na tabela ou triggers
         
         // Construir a URL base
         $endpoint = $this->url . '/rest/v1/' . $this->table;
