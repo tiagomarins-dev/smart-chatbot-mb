@@ -129,60 +129,33 @@ class CompaniesManager {
             return;
         }
         
-        // Limpa a tabela
-        this.companiesTableBody.innerHTML = '';
+        // Limpa listas de cards
+        const activeList = document.getElementById('active-companies-list');
+        const inactiveList = document.getElementById('inactive-companies-list');
+        if (activeList) activeList.innerHTML = '';
+        if (inactiveList) inactiveList.innerHTML = '';
         
-        // Adiciona cada empresa à tabela
+        // Adiciona cada empresa como card em sua aba
         this.companies.forEach(company => {
-            const row = document.createElement('tr');
-            
-            // Status badge
-            const statusBadge = company.is_active 
-                ? '<span class="badge bg-success">Ativa</span>' 
-                : '<span class="badge bg-danger">Inativa</span>';
-            
-            // Formatar data
-            const createdDate = new Date(company.created_at);
-            const formattedDate = createdDate.toLocaleDateString('pt-BR') + ' ' + 
-                               createdDate.toLocaleTimeString('pt-BR');
-            
-            // Botões de ação
-            const editButton = `<button class="btn btn-sm btn-outline-primary me-1 edit-company-btn" data-id="${company.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>`;
-            
-            const deleteButton = company.is_active 
-                ? `<button class="btn btn-sm btn-outline-danger delete-company-btn" data-id="${company.id}" data-name="${company.name}">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>`
-                : '';
-            
-            // Conteúdo da linha
-            row.innerHTML = `
-                <td>${company.name}</td>
-                <td>${statusBadge}</td>
-                <td>${formattedDate}</td>
-                <td>
-                    ${editButton}
-                    ${deleteButton}
-                </td>
+            const col = document.createElement('div');
+            col.className = 'col-sm-6 col-md-4 mb-4';
+            const badgeClass = company.is_active ? 'bg-success' : 'bg-danger';
+            const badgeText = company.is_active ? 'Ativa' : 'Inativa';
+            col.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title mb-2">${company.name}</h5>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                </div>
             `;
-            
-            // Adiciona event listeners
-            const editBtn = row.querySelector('.edit-company-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', () => this.showEditCompanyModal(company.id));
+            if (company.is_active) {
+                if (activeList) activeList.appendChild(col);
+            } else {
+                if (inactiveList) inactiveList.appendChild(col);
             }
-            
-            const deleteBtn = row.querySelector('.delete-company-btn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => this.showDeleteCompanyModal(company.id, company.name));
-            }
-            
-            this.companiesTableBody.appendChild(row);
         });
-        
-        // Mostra a tabela
+        // Exibe os cards
         this.showTable();
     }
     
@@ -487,7 +460,8 @@ class CompaniesManager {
     showLoading() {
         this.companiesLoading.classList.remove('d-none');
         this.companiesEmpty.classList.add('d-none');
-        this.companiesTableContainer.classList.add('d-none');
+        if (this.companiesTableContainer) this.companiesTableContainer.classList.add('d-none');
+        const cards = document.getElementById('companies-cards'); if (cards) cards.classList.add('d-none');
     }
     
     /**
@@ -496,7 +470,8 @@ class CompaniesManager {
     showEmpty() {
         this.companiesLoading.classList.add('d-none');
         this.companiesEmpty.classList.remove('d-none');
-        this.companiesTableContainer.classList.add('d-none');
+        if (this.companiesTableContainer) this.companiesTableContainer.classList.add('d-none');
+        const cards = document.getElementById('companies-cards'); if (cards) cards.classList.add('d-none');
     }
     
     /**
@@ -505,7 +480,8 @@ class CompaniesManager {
     showTable() {
         this.companiesLoading.classList.add('d-none');
         this.companiesEmpty.classList.add('d-none');
-        this.companiesTableContainer.classList.remove('d-none');
+        if (this.companiesTableContainer) this.companiesTableContainer.classList.add('d-none');
+        const cards = document.getElementById('companies-cards'); if (cards) cards.classList.remove('d-none');
     }
 }
 

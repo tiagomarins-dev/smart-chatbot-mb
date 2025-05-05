@@ -156,46 +156,50 @@
             </a>
         </div>
             <div class="col-sm-6 col-lg-3 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <h4 class="fw-normal text-info">584</h4>
-                                <p class="subtitle text-sm text-muted mb-0">Readers</p>
+                <a href="projetos.php" class="text-decoration-none text-reset">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h4 class="fw-normal text-success" id="project-count">0</h4>
+                                    <p class="small text-muted mb-0">Projetos</p>
+                                </div>
+                                <div class="flex-shrink-0 ms-3">
+                                    <i class="fas fa-project-diagram fa-2x text-success"></i>
+                                </div>
                             </div>
-                            <div class="flex-shrink-0 ms-3">
-                                <i class="fas fa-book-reader fa-2x text-info"></i>
+                        </div>
+                        <div class="card-footer py-3 bg-success bg-opacity-10">
+                            <div class="row align-items-center text-success">
+                                <div class="col-10"><p class="mb-0">Gerenciar</p></div>
+                                <div class="col-2 text-end"><i class="fas fa-arrow-right"></i></div>
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer py-3 bg-info bg-opacity-10">
-                        <div class="row align-items-center text-info">
-                            <div class="col-10"><p class="mb-0">3% increase</p></div>
-                            <div class="col-2 text-end"><i class="fas fa-caret-up"></i></div>
-                        </div>
-                    </div>
-                </div>
+                </a>
             </div>
             <div class="col-sm-6 col-lg-3 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <h4 class="fw-normal text-primary">876</h4>
-                                <p class="subtitle text-sm text-muted mb-0">Bookmarks</p>
+                <a href="leads.php" class="text-decoration-none text-reset">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h4 class="fw-normal text-info" id="leads-count">0</h4>
+                                    <p class="small text-muted mb-0">Leads</p>
+                                </div>
+                                <div class="flex-shrink-0 ms-3">
+                                    <i class="fas fa-users fa-2x text-info"></i>
+                                </div>
                             </div>
-                            <div class="flex-shrink-0 ms-3">
-                                <i class="fas fa-bookmark fa-2x text-primary"></i>
+                        </div>
+                        <div class="card-footer py-3 bg-info bg-opacity-10">
+                            <div class="row align-items-center text-info">
+                                <div class="col-10"><p class="mb-0">Gerenciar</p></div>
+                                <div class="col-2 text-end"><i class="fas fa-arrow-right"></i></div>
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer py-3 bg-primary bg-opacity-10">
-                        <div class="row align-items-center text-primary">
-                            <div class="col-10"><p class="mb-0">10% increase</p></div>
-                            <div class="col-2 text-end"><i class="fas fa-caret-up"></i></div>
-                        </div>
-                    </div>
-                </div>
+                </a>
             </div>
             <div class="col-sm-6 col-lg-3 mb-4">
                 <div class="card h-100">

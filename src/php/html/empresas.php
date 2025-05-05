@@ -132,19 +132,15 @@
         <!-- Conteúdo principal para usuários autenticados -->
         <div class="auth-required d-none">
             <div class="row mt-4">
-                <div class="col-12">
-                    <div class="card fade-in">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="fas fa-building me-2"></i>Gerenciamento de Empresas</h5>
-                            <button id="new-company-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#companyModal">
-                                <i class="fas fa-plus me-1"></i> Nova Empresa
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <!-- Alerta para feedback -->
-                            <div id="company-alert" class="alert d-none" role="alert"></div>
+                <div class="col-12 d-flex justify-content-between align-items-center mb-5">
+                <h1 class="page-heading">Empresas</h1>
+                    <button id="new-company-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#companyModal">
+                        <i class="fas fa-plus me-1"></i> Nova Empresa
+                    </button>
+                </div>
+                <div id="company-alert" class="alert d-none" role="alert"></div>
                             
-                            <!-- Tabela de empresas -->
+                            <!-- Lista de empresas em cards com abas -->
                             <div id="companies-container">
                                 <div id="companies-loading" class="text-center my-5">
                                     <div class="spinner-border text-primary" role="status">
@@ -152,7 +148,6 @@
                                     </div>
                                     <p class="mt-2">Carregando empresas...</p>
                                 </div>
-                                
                                 <div id="companies-empty" class="text-center my-5 d-none">
                                     <i class="fas fa-building text-muted" style="font-size: 3rem;"></i>
                                     <p class="mt-3">Você ainda não cadastrou nenhuma empresa.</p>
@@ -160,28 +155,23 @@
                                         <i class="fas fa-plus-circle me-1"></i> Cadastrar Empresa
                                     </button>
                                 </div>
-                                
-                                <div id="companies-table-container" class="d-none">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover" id="companies-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Nome</th>
-                                                    <th>Status</th>
-                                                    <th>Data de Criação</th>
-                                                    <th>Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="companies-table-body">
-                                                <!-- Preenchido via JavaScript -->
-                                            </tbody>
-                                        </table>
+                                <div id="companies-cards" class="d-none">
+                                    <ul class="nav nav-tabs mb-5" role="tablist">
+                                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#active-companies" role="tab">Ativas</a></li>
+                                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#inactive-companies" role="tab">Inativas</a></li>
+                                    </ul>
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade show active" id="active-companies" role="tabpanel">
+                                            <div class="row" id="active-companies-list"></div>
+                                        </div>
+                                        <div class="tab-pane fade" id="inactive-companies" role="tabpanel">
+                                            <div class="row" id="inactive-companies-list"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
             </div>
         </div>
     </div>
