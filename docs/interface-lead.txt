@@ -1,0 +1,164 @@
+# Documentação da Interface de Gerenciamento de Leads
+
+## Visão Geral
+
+A interface de gerenciamento de leads foi implementada seguindo uma estrutura de grid com três seções principais, proporcionando uma navegação intuitiva entre empresas, projetos e leads. Esta interface está integrada com a API REST de leads (/api/v1/leads) e utiliza o sistema de autenticação existente.
+
+## Arquivos Criados/Modificados
+
+1. **HTML:** `/src/php/html/leads.php`
+   - Página principal da interface de leads
+
+2. **JavaScript:** `/src/php/html/assets/js/leads.js`
+   - Classe LeadsManager para gerenciar todas as operações relacionadas aos leads
+
+## Estrutura da Interface
+
+### 1. Topo Fixo
+- Mantém a barra de navegação existente do projeto
+- Adiciona a opção "Leads" como ativa quando na página de gerenciamento de leads
+
+### 2. Layout de Grid em 3 Seções
+
+#### Lateral Esquerda (col-3)
+- Cards com as empresas disponíveis
+- Cada card exibe o nome da empresa e um badge com o número de projetos
+- Cards são clicáveis para filtrar os projetos exibidos
+- Inclui uma opção "Todas as Empresas" para mostrar projetos de todas as empresas
+
+#### Seção Central (col-9)
+- Cards de projetos relacionados à empresa selecionada
+- Cada card exibe:
+  - Nome do projeto
+  - Status (badge: Ativo/Inativo)
+  - Quantidade de leads
+  - Botão "Ver Leads" para acessar os leads desse projeto
+- Layout responsivo com 3 cards por linha em telas grandes
+
+#### Painel de Leads
+- Aparece quando um projeto é selecionado
+- Botão "Voltar" para retornar à lista de projetos
+- Tabela completa de leads com todas as funcionalidades solicitadas
+
+### 3. Tabela de Leads
+
+- **Colunas:**
+  - Checkbox para seleção
+  - Nome
+  - E-mail
+  - Telefone (formatado automaticamente)
+  - Status (com badges coloridos)
+  - Tags (baseadas em UTMs)
+  - Ações (visualizar, editar, excluir)
+
+- **Funcionalidades:**
+  - Campo de busca (filtra por nome, email ou telefone)
+  - Filtro por status (dropdown)
+  - Botão para exportar lista em CSV
+  - Botão para excluir leads selecionados (aparece quando há seleção)
+  - Paginação automática (10 leads por página)
+
+## Modais Implementados
+
+### 1. Modal de Criar/Editar Lead
+- Formulário completo com todos os campos necessários:
+  - Nome
+  - Email
+  - Telefone
+  - Status
+  - Observações
+  - Informações de campanha (UTMs)
+- Validação de campos obrigatórios
+- Feedback visual durante salvamento
+
+### 2. Modal de Detalhes do Lead
+- Exibe todas as informações do lead
+- Formatação adequada para telefone e datas
+- Badge colorido para status
+- Botão para editar a partir da visualização
+
+### 3. Modal de Confirmação de Exclusão
+- Confirmação antes de excluir um lead
+- Exibe o nome do lead a ser excluído
+- Feedback de segurança
+
+### 4. Modal de Exclusão em Massa
+- Confirmação antes de excluir múltiplos leads
+- Exibe o número de leads selecionados
+- Feedback de segurança
+
+## Funcionalidades JavaScript
+
+A classe `LeadsManager` implementa todas as funcionalidades necessárias:
+
+### Carregamento de Dados
+- Carregamento dinâmico de empresas e projetos
+- Filtragem de projetos por empresa selecionada
+- Carregamento de leads por projeto
+
+### Gerenciamento de Leads
+- Criação de novos leads
+- Visualização de detalhes
+- Edição de leads existentes
+- Atualização de status
+- Exclusão individual e em massa
+
+### Filtragem e Busca
+- Busca de texto em tempo real (debounced)
+- Filtragem por status
+- Paginação automática dos resultados
+
+### Exportação e Utilidades
+- Exportação para CSV com nome de arquivo baseado no projeto e data
+- Formatação de telefones para padrão brasileiro
+- Formatação adequada de status com badges coloridos
+- Exibição de alertas temporários
+
+## Fluxo de Navegação
+
+1. Usuário acessa página de leads
+2. Interface mostra lista de empresas à esquerda e projetos à direita
+3. Usuário pode filtrar projetos clicando em uma empresa
+4. Ao clicar em "Ver Leads" de um projeto, a tabela de leads desse projeto é mostrada
+5. Usuário pode gerenciar leads (criar, editar, excluir, filtrar)
+6. Botão "Voltar" retorna à visualização de projetos
+
+## Tratamento de Estados
+
+A interface trata adequadamente diferentes estados:
+
+- **Carregamento:** Spinners são exibidos durante carregamento de dados
+- **Lista vazia:** Mensagens e ícones informativos quando não há dados
+- **Autenticação:** Verifica autenticação e exibe mensagem adequada para usuários não autenticados
+- **Erros:** Alertas informativos para erros de API ou validação
+
+## Responsividade
+
+- Layout responsivo que se adapta a diferentes tamanhos de tela
+- Comportamento específico para dispositivos móveis
+- Cards e tabelas com scroll horizontal em telas pequenas
+
+## Integração com API
+
+A interface integra-se com as seguintes APIs:
+
+- `/api/v1/companies` - Para carregar empresas disponíveis
+- `/api/v1/projects` - Para carregar projetos, filtráveis por empresa
+- `/api/v1/leads` - Para todas as operações CRUD de leads
+- `/api/v1/leads?project_id={id}` - Para carregar leads de um projeto específico
+- `/api/v1/leads/{id}/status` - Para atualizar o status de um lead
+
+## Considerações de Segurança
+
+- Verificação de autenticação antes de qualquer operação
+- Uso de API Key ou JWT Token em todas as requisições
+- Confirmação antes de ações destrutivas (exclusão)
+- Sanitização de entradas de usuário
+
+## Melhorias Futuras Possíveis
+
+1. Implementar filtros adicionais (data de criação, origem)
+2. Adicionar funcionalidade de importação de leads via CSV
+3. Implementar gráficos e estatísticas sobre conversão de leads
+4. Adicionar histórico de alterações de status
+5. Implementar notificações para novos leads ou alterações de status

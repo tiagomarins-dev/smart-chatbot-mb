@@ -67,7 +67,7 @@
                         <a class="nav-link" href="projetos.php"><i class="fas fa-project-diagram me-1"></i> Projetos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-users me-1"></i> Leads</a>
+                        <a class="nav-link" href="leads.php"><i class="fas fa-users me-1"></i> Leads</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="integracoes.php"><i class="fas fa-plug me-1"></i> Integrações</a>
