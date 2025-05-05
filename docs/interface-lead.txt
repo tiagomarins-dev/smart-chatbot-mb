@@ -162,3 +162,5 @@ A interface integra-se com as seguintes APIs:
 3. Implementar gráficos e estatísticas sobre conversão de leads
 4. Adicionar histórico de alterações de status
 5. Implementar notificações para novos leads ou alterações de status
+
+
