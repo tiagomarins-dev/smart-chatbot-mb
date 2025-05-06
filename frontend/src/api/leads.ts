@@ -1,0 +1,67 @@
+import apiClient from './client';
+import { ApiResponse, LeadsResponse, LeadResponse, LeadStatsResponse } from '../interfaces';
+
+export const leadsApi = {
+  /**
+   * Get all leads
+   */
+  getLeads: async (params?: { project_id?: string; email?: string }): Promise<ApiResponse<LeadsResponse>> => {
+    return await apiClient.get<LeadsResponse>('/leads', params);
+  },
+  
+  /**
+   * Get a lead by ID
+   */
+  getLead: async (id: string): Promise<ApiResponse<LeadResponse>> => {
+    return await apiClient.get<LeadResponse>(`/leads/${id}`);
+  },
+  
+  /**
+   * Capture a new lead
+   */
+  captureLead: async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    project_id: string;
+    first_name?: string;
+    notes?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+  }): Promise<ApiResponse<LeadResponse>> => {
+    return await apiClient.post<LeadResponse>('/leads', data);
+  },
+  
+  /**
+   * Update a lead's status
+   */
+  updateLeadStatus: async (
+    id: string, 
+    data: { 
+      status: 'novo' | 'qualificado' | 'contatado' | 'convertido' | 'desistiu' | 'inativo';
+      notes?: string;
+    }
+  ): Promise<ApiResponse<{ 
+    message: string;
+    lead_id: string;
+    previous_status: string;
+    new_status: string;
+  }>> => {
+    return await apiClient.put<any>(`/leads/${id}/status`, data);
+  },
+  
+  /**
+   * Get lead statistics
+   */
+  getLeadStats: async (params?: { 
+    project_id?: string;
+    period?: number;
+  }): Promise<ApiResponse<LeadStatsResponse>> => {
+    return await apiClient.get<LeadStatsResponse>('/leads/stats', params);
+  }
+};
+
+export default leadsApi;

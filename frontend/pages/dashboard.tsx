@@ -1,0 +1,470 @@
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import Layout from '../src/components/layout/Layout';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useRealtime } from '../src/contexts/RealtimeContext';
+import companiesApi from '../src/api/companies';
+import leadsApi from '../src/api/leads';
+import { Company, Lead, LeadStats } from '../src/interfaces';
+import LeadsDashboard from '../src/components/leads/LeadsDashboard';
+
+const Dashboard: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { isConnected, companies: realtimeCompanies, leads: realtimeLeads, leadStats: realtimeLeadStats } = useRealtime();
+  const router = useRouter();
+  
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadStats, setLeadStats] = useState<LeadStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState(30);
+  
+  // Get query parameters
+  useEffect(() => {
+    const { period: periodParam } = router.query;
+    
+    if (typeof periodParam === 'string') {
+      const parsedPeriod = parseInt(periodParam, 10);
+      if (!isNaN(parsedPeriod)) {
+        setPeriod(parsedPeriod);
+      }
+    }
+  }, [router.query]);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login?redirect=/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch data in parallel
+        const [companiesRes, leadsRes, statsRes] = await Promise.all([
+          companiesApi.getCompanies(),
+          leadsApi.getLeads(),
+          leadsApi.getLeadStats({ period })
+        ]);
+        
+        if (companiesRes.success && companiesRes.data?.companies) {
+          setCompanies(companiesRes.data.companies);
+        }
+        
+        if (leadsRes.success && leadsRes.data?.leads) {
+          setLeads(leadsRes.data.leads);
+        }
+        
+        if (statsRes.success && statsRes.data?.stats) {
+          setLeadStats(statsRes.data.stats);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Falha ao carregar dados do painel');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isAuthenticated, period]);
+
+  // Use realtime data when available
+  useEffect(() => {
+    if (realtimeCompanies.length > 0) {
+      setCompanies(realtimeCompanies);
+    }
+    
+    if (realtimeLeads.length > 0) {
+      setLeads(realtimeLeads);
+    }
+    
+    if (realtimeLeadStats) {
+      setLeadStats(realtimeLeadStats);
+    }
+  }, [realtimeCompanies, realtimeLeads, realtimeLeadStats]);
+
+  if (isLoading || loading) {
+    return (
+      <Layout title="Painel | Smart CRM">
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Carregando...</span>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout title="Painel | Smart CRM">
+        <div className="alert alert-danger">{error}</div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout title="Painel | Smart CRM">
+      <div className="container py-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="text-primary">
+            Painel
+            {isConnected && (
+              <span className="badge bg-success ms-2" style={{ fontSize: '0.5em', verticalAlign: 'middle' }}>
+                <i className="bi bi-lightning-fill me-1"></i>
+                Ao vivo
+              </span>
+            )}
+          </h1>
+        </div>
+        
+        {/* Overview Cards */}
+        <div className="row mb-4">
+          <div className="col-md-4">
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-start">
+                  <h5 className="card-title">Empresas</h5>
+                  <div className="p-2 rounded-circle bg-primary bg-opacity-10">
+                    <i className="bi bi-building text-primary"></i>
+                  </div>
+                </div>
+                <p className="card-text display-4">{companies.length}</p>
+                <Link href="/companies" className="btn btn-sm btn-outline-primary mt-3">
+                  Ver Todas <i className="bi bi-arrow-right ms-1"></i>
+                </Link>
+              </div>
+            </div>
+          </div>
+          
+          <div className="col-md-4">
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-start">
+                  <h5 className="card-title">Total de Leads</h5>
+                  <div className="p-2 rounded-circle bg-success bg-opacity-10">
+                    <i className="bi bi-people text-success"></i>
+                  </div>
+                </div>
+                <p className="card-text display-4">{leadStats?.total_leads || 0}</p>
+                <Link href="/leads" className="btn btn-sm btn-outline-primary mt-3">
+                  Ver Todos <i className="bi bi-arrow-right ms-1"></i>
+                </Link>
+              </div>
+            </div>
+          </div>
+          
+          <div className="col-md-4">
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-start">
+                  <h5 className="card-title">Novos Leads ({period} dias)</h5>
+                  <div className="p-2 rounded-circle bg-info bg-opacity-10">
+                    <i className="bi bi-person-plus text-info"></i>
+                  </div>
+                </div>
+                <p className="card-text display-4">{leadStats?.new_leads_period || 0}</p>
+                <div className="dropdown mt-3">
+                  <button className="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Período: {period} dias
+                  </button>
+                  <ul className="dropdown-menu">
+                    <li><a className="dropdown-item" href="?period=7">Últimos 7 dias</a></li>
+                    <li><a className="dropdown-item" href="?period=30">Últimos 30 dias</a></li>
+                    <li><a className="dropdown-item" href="?period=90">Últimos 90 dias</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Lead Status Distribution */}
+        <div className="row mb-4">
+          <div className="col-lg-6">
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-header bg-transparent border-0">
+                <h5 className="card-title mb-0">
+                  <i className="bi bi-pie-chart me-2 text-primary"></i>
+                  Distribuição por Status
+                </h5>
+              </div>
+              <div className="card-body">
+                {leadStats ? (
+                  <div className="d-flex flex-column gap-3">
+                    <div className="d-flex justify-content-between">
+                      <span>Novo</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="progress flex-grow-1" style={{ width: '200px', height: '10px' }}>
+                          <div 
+                            className="progress-bar bg-info" 
+                            role="progressbar" 
+                            style={{ width: `${(leadStats.leads_by_status.novo || 0) / leadStats.total_leads * 100}%` }}
+                            aria-valuenow={(leadStats.leads_by_status.novo || 0) / leadStats.total_leads * 100}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          ></div>
+                        </div>
+                        <span className="badge bg-info">{leadStats.leads_by_status.novo || 0}</span>
+                      </div>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span>Qualificado</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="progress flex-grow-1" style={{ width: '200px', height: '10px' }}>
+                          <div 
+                            className="progress-bar bg-primary" 
+                            role="progressbar" 
+                            style={{ width: `${(leadStats.leads_by_status.qualificado || 0) / leadStats.total_leads * 100}%` }}
+                            aria-valuenow={(leadStats.leads_by_status.qualificado || 0) / leadStats.total_leads * 100}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          ></div>
+                        </div>
+                        <span className="badge bg-primary">{leadStats.leads_by_status.qualificado || 0}</span>
+                      </div>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span>Contatado</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="progress flex-grow-1" style={{ width: '200px', height: '10px' }}>
+                          <div 
+                            className="progress-bar bg-warning" 
+                            role="progressbar" 
+                            style={{ width: `${(leadStats.leads_by_status.contatado || 0) / leadStats.total_leads * 100}%` }}
+                            aria-valuenow={(leadStats.leads_by_status.contatado || 0) / leadStats.total_leads * 100}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          ></div>
+                        </div>
+                        <span className="badge bg-warning">{leadStats.leads_by_status.contatado || 0}</span>
+                      </div>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span>Convertido</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="progress flex-grow-1" style={{ width: '200px', height: '10px' }}>
+                          <div 
+                            className="progress-bar bg-success" 
+                            role="progressbar" 
+                            style={{ width: `${(leadStats.leads_by_status.convertido || 0) / leadStats.total_leads * 100}%` }}
+                            aria-valuenow={(leadStats.leads_by_status.convertido || 0) / leadStats.total_leads * 100}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          ></div>
+                        </div>
+                        <span className="badge bg-success">{leadStats.leads_by_status.convertido || 0}</span>
+                      </div>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span>Desistiu / Inativo</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="progress flex-grow-1" style={{ width: '200px', height: '10px' }}>
+                          <div 
+                            className="progress-bar bg-secondary" 
+                            role="progressbar" 
+                            style={{ width: `${((leadStats.leads_by_status.desistiu || 0) + (leadStats.leads_by_status.inativo || 0)) / leadStats.total_leads * 100}%` }}
+                            aria-valuenow={((leadStats.leads_by_status.desistiu || 0) + (leadStats.leads_by_status.inativo || 0)) / leadStats.total_leads * 100}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          ></div>
+                        </div>
+                        <span className="badge bg-secondary">{(leadStats.leads_by_status.desistiu || 0) + (leadStats.leads_by_status.inativo || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center py-3">Nenhuma estatística de leads disponível</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="col-lg-6">
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-header bg-transparent border-0">
+                <h5 className="card-title mb-0">
+                  <i className="bi bi-diagram-3 me-2 text-primary"></i>
+                  Distribuição por Origem
+                </h5>
+              </div>
+              <div className="card-body">
+                {leadStats && Object.keys(leadStats.leads_by_source).length > 0 ? (
+                  <ul className="list-group list-group-flush">
+                    {Object.entries(leadStats.leads_by_source)
+                      .sort(([, countA], [, countB]) => countB - countA)
+                      .map(([source, count]) => (
+                        <li key={source} className="list-group-item d-flex justify-content-between align-items-center border-0 py-2">
+                          <span><i className="bi bi-globe2 me-2 text-primary"></i>{source || 'Direto'}</span>
+                          <span className="badge bg-primary rounded-pill">{count}</span>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <p className="text-center py-3">Nenhum dado de origem disponível</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Recent Leads */}
+        <div className="row mb-4">
+          <div className="col-12">
+            <div className="card shadow-sm border-0">
+              <div className="card-header bg-transparent d-flex justify-content-between align-items-center border-0">
+                <h5 className="mb-0">
+                  <i className="bi bi-person-lines-fill me-2 text-primary"></i>
+                  Leads Recentes
+                </h5>
+                <Link href="/leads" className="btn btn-sm btn-primary">
+                  Ver Todos <i className="bi bi-arrow-right ms-1"></i>
+                </Link>
+              </div>
+              <div className="card-body">
+                {leads.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Nome</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th>Criado em</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leads.slice(0, 5).map((lead) => (
+                          <tr key={lead.id}>
+                            <td>
+                              <Link href={`/leads/${lead.id}`} className="text-decoration-none">
+                                {lead.name}
+                              </Link>
+                            </td>
+                            <td>{lead.email}</td>
+                            <td>
+                              <span className={`badge bg-${getStatusColor(lead.status)}`}>
+                                {getStatusDisplayName(lead.status)}
+                              </span>
+                            </td>
+                            <td>
+                              {lead.created_at
+                                ? new Date(lead.created_at).toLocaleDateString()
+                                : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center py-3">Nenhum lead encontrado</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Recent Companies */}
+        <div className="row">
+          <div className="col-12">
+            <div className="card shadow-sm border-0">
+              <div className="card-header bg-transparent d-flex justify-content-between align-items-center border-0">
+                <h5 className="mb-0">
+                  <i className="bi bi-building me-2 text-primary"></i>
+                  Empresas Recentes
+                </h5>
+                <Link href="/companies" className="btn btn-sm btn-primary">
+                  Ver Todas <i className="bi bi-arrow-right ms-1"></i>
+                </Link>
+              </div>
+              <div className="card-body">
+                {companies.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Nome</th>
+                          <th>Status</th>
+                          <th>Criado em</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {companies.slice(0, 5).map((company) => (
+                          <tr key={company.id}>
+                            <td>
+                              <Link href={`/companies/${company.id}`} className="text-decoration-none">
+                                {company.name}
+                              </Link>
+                            </td>
+                            <td>
+                              {company.is_active ? (
+                                <span className="badge bg-success">Ativo</span>
+                              ) : (
+                                <span className="badge bg-secondary">Inativo</span>
+                              )}
+                            </td>
+                            <td>
+                              {company.created_at
+                                ? new Date(company.created_at).toLocaleDateString()
+                                : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center py-3">Nenhuma empresa encontrada</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+// Helper function to get the appropriate color for lead status
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'novo':
+      return 'info';
+    case 'qualificado':
+      return 'primary';
+    case 'contatado':
+      return 'warning';
+    case 'convertido':
+      return 'success';
+    case 'desistiu':
+      return 'danger';
+    case 'inativo':
+      return 'secondary';
+    default:
+      return 'light';
+  }
+};
+
+// Helper function to get status display name
+const getStatusDisplayName = (status: string): string => {
+  switch (status) {
+    case 'novo': return 'Novo';
+    case 'qualificado': return 'Qualificado';
+    case 'contatado': return 'Contatado';
+    case 'convertido': return 'Convertido';
+    case 'desistiu': return 'Desistiu';
+    case 'inativo': return 'Inativo';
+    default: return status;
+  }
+};
+
+export default Dashboard;

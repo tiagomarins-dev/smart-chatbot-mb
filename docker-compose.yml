@@ -1,49 +1,36 @@
 version: '3.8'
 
 services:
-  node-api:
+  backend:
     build:
-      context: .
-      dockerfile: Dockerfile.node
-    container_name: whatsapp-api
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm-backend
     volumes:
-      - ./src/node:/app/src/node
-      - whatsapp-auth:/app/.wwebjs_auth
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    networks:
-      - whatsapp-network
+      - ./backend:/usr/src/app
+      - backend_node_modules:/usr/src/app/node_modules
+    env_file:
+      - ./.env
+    ports:
+      - '9032:3000'
+    restart: unless-stopped
 
-  php-web:
+  frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.apache
-    container_name: whatsapp-web
-    restart: unless-stopped
-    ports:
-      - "9030:80"
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm-frontend
     volumes:
-      - ./src/php/html:/var/www/html
-      - ./api:/var/www/html/api
-      - ./.env:/var/www/html/.env
+      - ./frontend:/usr/src/app
+      - frontend_node_modules:/usr/src/app/node_modules
     environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - NODE_ENV=development
+    ports:
+      - '9031:3000'
     depends_on:
-      - node-api
-    networks:
-      - whatsapp-network
-
-networks:
-  whatsapp-network:
-    driver: bridge
+      - backend
+    restart: unless-stopped
 
 volumes:
-  whatsapp-auth:
-    driver: local
+  backend_node_modules:
+  frontend_node_modules:

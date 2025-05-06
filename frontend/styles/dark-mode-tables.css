@@ -1,0 +1,149 @@
+/* Dark mode table styles with extremely high specificity to override Bootstrap */
+
+/* Target all table elements with high specificity */
+body.dark-mode table,
+body.dark-mode .table,
+body.dark-mode [class*="table"],
+html body.dark-mode table,
+html body.dark-mode .table {
+  background-color: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Target all table rows with high specificity */
+body.dark-mode tr,
+body.dark-mode tbody tr,
+body.dark-mode thead tr,
+body.dark-mode tfoot tr,
+body.dark-mode table tr,
+body.dark-mode .table tr,
+body.dark-mode .table tbody tr,
+body.dark-mode .table thead tr,
+body.dark-mode .table tfoot tr,
+html body.dark-mode tr,
+html body.dark-mode tbody tr,
+html body.dark-mode table tr,
+html body.dark-mode .table tr,
+html body.dark-mode .table tbody tr {
+  background-color: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Target all table cells with high specificity */
+body.dark-mode td,
+body.dark-mode th,
+body.dark-mode table td,
+body.dark-mode table th,
+body.dark-mode .table td,
+body.dark-mode .table th,
+body.dark-mode tbody td,
+body.dark-mode tbody th,
+body.dark-mode thead td,
+body.dark-mode thead th,
+html body.dark-mode td,
+html body.dark-mode th,
+html body.dark-mode table td,
+html body.dark-mode table th,
+html body.dark-mode .table td,
+html body.dark-mode .table th {
+  background-color: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Target table headers with high specificity */
+body.dark-mode thead,
+body.dark-mode .table thead,
+body.dark-mode table thead,
+html body.dark-mode thead,
+html body.dark-mode .table thead,
+html body.dark-mode table thead {
+  background-color: var(--dark-table-header) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Target table header cells with high specificity */
+body.dark-mode thead th,
+body.dark-mode thead td,
+body.dark-mode .table thead th,
+body.dark-mode .table thead td,
+body.dark-mode table thead th,
+body.dark-mode table thead td,
+html body.dark-mode thead th,
+html body.dark-mode thead td,
+html body.dark-mode .table thead th,
+html body.dark-mode .table thead td {
+  background-color: var(--dark-table-header) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Target table body with high specificity */
+body.dark-mode tbody,
+body.dark-mode .table tbody,
+body.dark-mode table tbody,
+html body.dark-mode tbody,
+html body.dark-mode .table tbody,
+html body.dark-mode table tbody {
+  background-color: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Target striped tables */
+body.dark-mode .table-striped tbody tr:nth-of-type(odd),
+html body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Target hover effect */
+body.dark-mode .table-hover tbody tr:hover,
+body.dark-mode .table tbody tr:hover,
+body.dark-mode tbody tr:hover,
+html body.dark-mode .table-hover tbody tr:hover,
+html body.dark-mode .table tbody tr:hover,
+html body.dark-mode tbody tr:hover {
+  background-color: var(--dark-table-hover) !important;
+  color: var(--dark-text) !important;
+}
+
+/* Target table responsive containers */
+body.dark-mode .table-responsive,
+html body.dark-mode .table-responsive {
+  background-color: var(--dark-card) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* Force all .dark-mode-table elements to have dark styling */
+.dark-mode-table,
+table.dark-mode-table,
+tr.dark-mode-table,
+td.dark-mode-table,
+th.dark-mode-table,
+tbody.dark-mode-table,
+thead.dark-mode-table,
+[data-theme-mode="dark"],
+table[data-theme-mode="dark"],
+tr[data-theme-mode="dark"],
+td[data-theme-mode="dark"],
+th[data-theme-mode="dark"] {
+  background-color: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
+
+/* React/Next.js specific - prevent white flash during hydration */
+[data-theme="dark"] table,
+[data-theme="dark"] .table,
+[data-theme="dark"] tr,
+[data-theme="dark"] td,
+[data-theme="dark"] th,
+[data-theme="dark"] thead,
+[data-theme="dark"] tbody {
+  background-color: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-table-border) !important;
+}
