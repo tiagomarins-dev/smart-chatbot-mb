@@ -20,4 +20,5 @@ export interface AuthResult {
   authenticated: boolean;
   user_id?: string;
   error?: string;
+  api_key_id?: string; // Added for API key authentication
 }

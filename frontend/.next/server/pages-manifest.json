@@ -2,9 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/dashboard": "pages/dashboard.js",
-  "/empresas": "pages/empresas.js",
-  "/projects": "pages/projects.js",
-  "/empresas/[id]": "pages/empresas/[id].js"
+  "/api-docs": "pages/api-docs.js",
+  "/api-keys": "pages/api-keys.js",
+  "/projetos/[id]/edit": "pages/projetos/[id]/edit.js"
 }

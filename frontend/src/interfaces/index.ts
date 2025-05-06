@@ -49,9 +49,11 @@ export interface Project {
   name: string;
   description?: string;
   status: 'em_planejamento' | 'em_andamento' | 'pausado' | 'concluido' | 'cancelado';
-  start_date?: string;
-  end_date?: string;
-  views_count?: number;
+  campaign_start_date?: string;
+  campaign_end_date?: string;
+  start_date?: string; // Legacy field, use campaign_start_date instead
+  end_date?: string; // Legacy field, use campaign_end_date instead
+  views_count: number; // Number of times the project has been viewed
   is_active: boolean;
   created_at?: string;
   updated_at?: string;

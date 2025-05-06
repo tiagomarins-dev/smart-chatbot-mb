@@ -69,10 +69,29 @@ class SupabaseAdapter {
      * @return SupabaseAdapter
      */
     public function from($table) {
+        // Log para debug
+        error_log("SupabaseAdapter::from - Definindo tabela: {$table}");
+        
+        // Salvar o estado dos dados de atualização, se existirem
+        $updateData = isset($this->updateData) ? $this->updateData : null;
+        $insertData = isset($this->insertData) ? $this->insertData : null;
+        
         $this->table = $table;
         $this->filters = [];
         $this->select = '*';
         $this->order = [];
+        
+        // Restaurar os dados de atualização, se existiam antes
+        if ($updateData !== null) {
+            $this->updateData = $updateData;
+            error_log('SupabaseAdapter::from - Preservando updateData existente');
+        }
+        
+        if ($insertData !== null) {
+            $this->insertData = $insertData;
+            error_log('SupabaseAdapter::from - Preservando insertData existente');
+        }
+        
         return $this;
     }
     
@@ -96,11 +115,20 @@ class SupabaseAdapter {
      * @return SupabaseAdapter
      */
     public function filter($column, $operator, $value) {
+        // Log para debug
+        error_log("SupabaseAdapter::filter - Adicionando filtro: {$column} {$operator} {$value}");
+        
         $this->filters[] = [
             'column' => $column,
             'operator' => $operator,
             'value' => $value
         ];
+        
+        // Verificar se updateData está definido para debug
+        if (isset($this->updateData)) {
+            error_log('SupabaseAdapter::filter - updateData ainda está definido após adicionar filtro');
+        }
+        
         return $this;
     }
     
@@ -135,8 +163,89 @@ class SupabaseAdapter {
      * @return SupabaseAdapter
      */
     public function update($data) {
+        // Certifica-se de que updateData é definido como propriedade
         $this->updateData = $data;
+        
+        // Log para debug
+        error_log('SupabaseAdapter::update - Definindo updateData: ' . json_encode($data));
+        
         return $this;
+    }
+    
+    /**
+     * Atualiza dados na tabela e executa imediatamente
+     * (Método alternativo que não depende de updateData)
+     * 
+     * @param array $data Dados a serem atualizados
+     * @return object Resultado da execução
+     */
+    public function directUpdate($data) {
+        // Log para debug
+        error_log('SupabaseAdapter::directUpdate - Atualizando diretamente com dados: ' . json_encode($data));
+        
+        if (empty($this->table)) {
+            throw new Exception('Tabela não definida. Use o método from() primeiro.');
+        }
+        
+        if (empty($this->filters)) {
+            throw new Exception('Nenhum filtro fornecido para atualização. Use o método filter() primeiro.');
+        }
+        
+        // Adicionar updated_at automaticamente se não estiver presente
+        if (!isset($data['updated_at'])) {
+            $data['updated_at'] = date('c');
+        }
+        
+        // Construir condição WHERE
+        $whereCondition = '';
+        $whereParams = [];
+        
+        $sqlFilters = [];
+        foreach ($this->filters as $filter) {
+            // Mapear operadores para SQL
+            $sqlOperator = $this->mapOperator($filter['operator']);
+            $sqlFilters[] = sprintf('%s %s ?', $filter['column'], $sqlOperator);
+            $whereParams[] = $filter['value'];
+        }
+        $whereCondition = implode(' AND ', $sqlFilters);
+        
+        // Log para debug
+        error_log('SupabaseAdapter::directUpdate - WHERE: ' . $whereCondition);
+        error_log('SupabaseAdapter::directUpdate - Parâmetros: ' . json_encode($whereParams));
+        
+        try {
+            // Atualizar no banco de dados
+            Database::update($this->table, $data, $whereCondition, $whereParams);
+            
+            // Obter os registros atualizados
+            $sql = sprintf('SELECT * FROM %s WHERE %s', $this->table, $whereCondition);
+            $updatedData = Database::query($sql, $whereParams);
+            
+            // Log para debug
+            error_log('SupabaseAdapter::directUpdate - Sucesso, retornando ' . count($updatedData) . ' registros');
+            
+            // Retornar resultado encapsulado em objeto anônimo
+            return new class($updatedData) {
+                private $data;
+                private $error;
+                
+                public function __construct($data) {
+                    $this->data = $data;
+                    $this->error = null;
+                }
+                
+                public function getError() {
+                    return $this->error;
+                }
+                
+                public function getData() {
+                    return $this->data;
+                }
+            };
+        } catch (Exception $e) {
+            error_log('SupabaseAdapter::directUpdate - ERRO: ' . $e->getMessage());
+            throw $e;
+        }
     }
     
     /**
@@ -146,6 +255,13 @@ class SupabaseAdapter {
      */
     public function execute() {
         try {
+            // Log para debug
+            if (isset($this->updateData)) {
+                error_log('SupabaseAdapter::execute - updateData está definido: ' . json_encode($this->updateData));
+            } else {
+                error_log('SupabaseAdapter::execute - updateData NÃO está definido');
+            }
+            
             // Dependendo da operação, executar a consulta apropriada
             if (isset($this->insertData)) {
                 return $this->executeInsert();
@@ -155,6 +271,8 @@ class SupabaseAdapter {
                 return $this->executeSelect();
             }
         } catch (Exception $e) {
+            error_log('SupabaseAdapter::execute - ERRO: ' . $e->getMessage());
+            
             return new class($e) {
                 private $error;
                 
@@ -284,10 +402,17 @@ class SupabaseAdapter {
      * @return object
      */
     private function executeUpdate() {
+        // Log para debug início do método
+        error_log('SupabaseAdapter::executeUpdate - Iniciando execução de update');
+        
         // Garantir que os dados foram fornecidos
         if (empty($this->updateData)) {
+            error_log('SupabaseAdapter::executeUpdate - ERRO: Nenhum dado fornecido para atualização');
             throw new Exception('Nenhum dado fornecido para atualização');
         }
+        
+        // Log para debug os dados de atualização recebidos
+        error_log('SupabaseAdapter::executeUpdate - Dados de atualização: ' . json_encode($this->updateData));
         
         // Se o dado não tiver updated_at, adicionar
         if (!isset($this->updateData['updated_at'])) {
@@ -306,38 +431,63 @@ class SupabaseAdapter {
                 $whereParams[] = $filter['value'];
             }
             $whereCondition = implode(' AND ', $sqlFilters);
+            
+            // Log para debug
+            error_log('SupabaseAdapter::executeUpdate - Condição WHERE: ' . $whereCondition);
+            error_log('SupabaseAdapter::executeUpdate - Parâmetros WHERE: ' . json_encode($whereParams));
         } else {
+            error_log('SupabaseAdapter::executeUpdate - ERRO: Nenhum filtro fornecido para atualização');
             throw new Exception('Nenhum filtro fornecido para atualização');
         }
         
-        // Atualizar no banco de dados
-        Database::update($this->table, $this->updateData, $whereCondition, $whereParams);
+        // Fazemos uma cópia da propriedade updateData antes de continuar
+        $updateDataCopy = $this->updateData;
         
-        // Obter os registros atualizados
-        $sql = sprintf('SELECT * FROM %s WHERE %s', $this->table, $whereCondition);
-        $data = Database::query($sql, $whereParams);
-        
-        // Limpar dados de atualização
-        $this->updateData = null;
-        
-        // Retornar resultado
-        return new class($data) {
-            private $data;
-            private $error;
+        try {
+            // Atualizar no banco de dados
+            $rowsAffected = Database::update($this->table, $updateDataCopy, $whereCondition, $whereParams);
             
-            public function __construct($data) {
-                $this->data = $data;
-                $this->error = null;
-            }
+            // Log para debug
+            error_log('SupabaseAdapter::executeUpdate - Linhas afetadas: ' . $rowsAffected);
             
-            public function getError() {
-                return $this->error;
-            }
+            // Obter os registros atualizados
+            $sql = sprintf('SELECT * FROM %s WHERE %s', $this->table, $whereCondition);
+            $data = Database::query($sql, $whereParams);
             
-            public function getData() {
-                return $this->data;
-            }
-        };
+            // Log para debug
+            error_log('SupabaseAdapter::executeUpdate - Registros retornados: ' . json_encode($data));
+            
+            // Limpar dados de atualização APÓS ter usado a cópia
+            $this->updateData = null;
+            
+            // Retornar resultado
+            return new class($data) {
+                private $data;
+                private $error;
+                
+                public function __construct($data) {
+                    $this->data = $data;
+                    $this->error = null;
+                }
+                
+                public function getError() {
+                    return $this->error;
+                }
+                
+                public function getData() {
+                    return $this->data;
+                }
+            };
+        } catch (Exception $e) {
+            // Log de erro
+            error_log('SupabaseAdapter::executeUpdate - ERRO ao atualizar dados: ' . $e->getMessage());
+            
+            // Limpar dados de atualização
+            $this->updateData = null;
+            
+            // Repassar a exceção
+            throw $e;
+        }
     }
     
     /**

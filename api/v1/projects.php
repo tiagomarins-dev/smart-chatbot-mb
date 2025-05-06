@@ -15,6 +15,7 @@
 require_once __DIR__ . '/../utils/response.php';
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/SupabaseClient.php';
+require_once __DIR__ . '/../models/SupabaseAdapter.php'; // Adicionar o adaptador Supabase
 require_once __DIR__ . '/../middleware/auth-rest.php'; // Usando a versão REST da autenticação
 
 // Verificar autenticação
@@ -265,8 +266,37 @@ function handleCreateProject($supabase, $userId) {
     }
     
     // Validar datas de campanha
-    $campaignStartDate = isset($data['campaign_start_date']) ? $data['campaign_start_date'] : null;
-    $campaignEndDate = isset($data['campaign_end_date']) ? $data['campaign_end_date'] : null;
+    $campaignStartDate = isset($data['campaign_start_date']) && !empty($data['campaign_start_date']) ? $data['campaign_start_date'] : null;
+    $campaignEndDate = isset($data['campaign_end_date']) && !empty($data['campaign_end_date']) ? $data['campaign_end_date'] : null;
+    
+    // Log para debug
+    error_log('Recebido campaign_start_date: ' . ($campaignStartDate ?? 'null'));
+    error_log('Recebido campaign_end_date: ' . ($campaignEndDate ?? 'null'));
+    
+    // Validar formato das datas
+    if ($campaignStartDate) {
+        // Tentar formatar como Y-m-d para garantir o formato correto
+        $timestamp = strtotime($campaignStartDate);
+        if ($timestamp !== false) {
+            $campaignStartDate = date('Y-m-d', $timestamp);
+            error_log('Formatado campaign_start_date: ' . $campaignStartDate);
+        } else {
+            error_log('Erro ao formatar campaign_start_date - formato inválido');
+            $campaignStartDate = null;
+        }
+    }
+    
+    if ($campaignEndDate) {
+        // Tentar formatar como Y-m-d para garantir o formato correto
+        $timestamp = strtotime($campaignEndDate);
+        if ($timestamp !== false) {
+            $campaignEndDate = date('Y-m-d', $timestamp);
+            error_log('Formatado campaign_end_date: ' . $campaignEndDate);
+        } else {
+            error_log('Erro ao formatar campaign_end_date - formato inválido');
+            $campaignEndDate = null;
+        }
+    }
     
     if ($campaignStartDate && $campaignEndDate) {
         $startDate = strtotime($campaignStartDate);
@@ -303,10 +333,33 @@ function handleCreateProject($supabase, $userId) {
         'company_id' => $data['company_id'],
         'name' => trim($data['name']),
         'description' => isset($data['description']) ? trim($data['description']) : null,
-        'is_active' => true,
-        'campaign_start_date' => $campaignStartDate,
-        'campaign_end_date' => $campaignEndDate
+        'is_active' => true
     ];
+    
+    // Adicionar datas apenas se não forem nulas
+    if (!empty($campaignStartDate)) {
+        $project['campaign_start_date'] = $campaignStartDate;
+        // Log de confirmação
+        error_log('Adicionando campaign_start_date ao projeto: ' . $campaignStartDate);
+    }
+    
+    if (!empty($campaignEndDate)) {
+        $project['campaign_end_date'] = $campaignEndDate;
+        // Log de confirmação
+        error_log('Adicionando campaign_end_date ao projeto: ' . $campaignEndDate);
+    }
+    
+    // Adicionar status se estiver disponível
+    if (isset($data['status'])) {
+        $project['status'] = $data['status'];
+        error_log('Adicionando status ao projeto: ' . $data['status']);
+    } else {
+        // Valor padrão para status
+        $project['status'] = 'em_planejamento';
+        error_log('Usando status padrão: em_planejamento');
+    }
+    
+    error_log('Dados completos do projeto a inserir: ' . json_encode($project));
     
     // Inserir no banco de dados
     $insertQuery = $supabase->from('projects')->insert($project);
@@ -456,14 +509,22 @@ function handleUpdateProject($supabase, $userId) {
     $urlParts = explode('/', $requestUri);
     $projectId = end($urlParts);
     
+    // Log para debug
+    error_log('Requisição de atualização recebida para o projeto: ' . $projectId);
+    error_log('URL da requisição: ' . $requestUri);
+    
     // Validar ID
     if (!$projectId || $projectId === 'projects') {
+        error_log('ID do projeto não fornecido ou inválido');
         sendResponse(400, ['error' => 'ID do projeto não fornecido']);
         return;
     }
     
     // Obter dados da requisição
     $data = json_decode(file_get_contents('php://input'), true);
+    
+    // Log dos dados recebidos
+    error_log('Dados recebidos para atualização: ' . json_encode($data));
     
     // Validar dados
     if (!isset($data['name']) || empty(trim($data['name']))) {
@@ -515,58 +576,69 @@ function handleUpdateProject($supabase, $userId) {
     }
     
     // Se está mudando a empresa, verificar se a nova empresa pertence ao usuário
-    if (isset($data['company_id']) && isset($currentProject) && isset($currentProject['company_id']) && $data['company_id'] !== $currentProject['company_id']) {
-        $checkCompanyQuery = $supabase->from('companies')
-            ->select('id, name, is_active')
-            ->filter('id', 'eq', $data['company_id'])
-            ->filter('user_id', 'eq', $userId);
-            
-        // Verificar se o objeto tem o método execute
-        if (is_object($checkCompanyQuery) && method_exists($checkCompanyQuery, 'execute')) {
-            $checkCompanyResponse = $checkCompanyQuery->execute();
-            
-            // Obter dados da resposta
-            $companyData = null;
-            if (is_object($checkCompanyResponse) && method_exists($checkCompanyResponse, 'getData')) {
-                $companyData = $checkCompanyResponse->getData();
-            } elseif (is_object($checkCompanyResponse) && isset($checkCompanyResponse->data)) {
-                $companyData = $checkCompanyResponse->data;
-            } else {
-                $companyData = $checkCompanyResponse;
-            }
-            
-            // Verificar se temos resultados
-            $hasResults = false;
-            
-            if (is_array($companyData) && !empty($companyData)) {
-                $hasResults = count($companyData) > 0;
-                if ($hasResults) {
-                    $companyData = $companyData[0];
+    if (isset($data['company_id']) && isset($currentProject)) {
+        // Verificação de tipo para currentProject
+        $currentCompanyId = null;
+        if (is_array($currentProject) && isset($currentProject['company_id'])) {
+            $currentCompanyId = $currentProject['company_id'];
+        } elseif (is_object($currentProject) && isset($currentProject->company_id)) {
+            $currentCompanyId = $currentProject->company_id;
+        }
+        
+        // Somente verificar se a empresa está mudando
+        if ($currentCompanyId !== null && $data['company_id'] !== $currentCompanyId) {
+            $checkCompanyQuery = $supabase->from('companies')
+                ->select('id, name, is_active')
+                ->filter('id', 'eq', $data['company_id'])
+                ->filter('user_id', 'eq', $userId);
+                
+            // Verificar se o objeto tem o método execute
+            if (is_object($checkCompanyQuery) && method_exists($checkCompanyQuery, 'execute')) {
+                $checkCompanyResponse = $checkCompanyQuery->execute();
+                
+                // Obter dados da resposta
+                $companyData = null;
+                if (is_object($checkCompanyResponse) && method_exists($checkCompanyResponse, 'getData')) {
+                    $companyData = $checkCompanyResponse->getData();
+                } elseif (is_object($checkCompanyResponse) && isset($checkCompanyResponse->data)) {
+                    $companyData = $checkCompanyResponse->data;
+                } else {
+                    $companyData = $checkCompanyResponse;
                 }
-            } elseif (is_object($companyData) && !empty((array)$companyData)) {
-                $hasResults = true;
+                
+                // Verificar se temos resultados
+                $hasResults = false;
+                
+                if (is_array($companyData) && !empty($companyData)) {
+                    $hasResults = count($companyData) > 0;
+                    if ($hasResults) {
+                        $companyData = $companyData[0];
+                    }
+                } elseif (is_object($companyData) && !empty((array)$companyData)) {
+                    $hasResults = true;
+                }
+                
+                if (!$hasResults) {
+                    sendResponse(404, ['error' => 'Empresa não encontrada ou sem permissão']);
+                    return;
+                }
+                
+                // Verificar se a nova empresa está ativa
+                $isActive = true; // valor padrão
+                if (is_array($companyData) && isset($companyData['is_active'])) {
+                    $isActive = $companyData['is_active'];
+                } elseif (is_object($companyData) && isset($companyData->is_active)) {
+                    $isActive = $companyData->is_active;
+                }
+                
+                if ($isActive === false) {
+                    sendResponse(400, ['error' => 'Não é possível vincular projetos a uma empresa inativa']);
+                    return;
+                }
+            } else {
+                // Se não podemos executar o método, vamos prosseguir com cuidado
+                error_log('Não foi possível verificar a permissão da empresa. Método execute não disponível.');
             }
-            
-            if (!$hasResults) {
-                sendResponse(404, ['error' => 'Empresa não encontrada ou sem permissão']);
-                return;
-            }
-            
-            // Verificar se a nova empresa está ativa
-            $isActive = true; // valor padrão
-            if (is_array($companyData) && isset($companyData['is_active'])) {
-                $isActive = $companyData['is_active'];
-            } elseif (is_object($companyData) && isset($companyData->is_active)) {
-                $isActive = $companyData->is_active;
-            }
-            
-            if ($isActive === false) {
-                sendResponse(400, ['error' => 'Não é possível vincular projetos a uma empresa inativa']);
-                return;
-            }
-        } else {
-            // Se não podemos executar o método, vamos prosseguir com cuidado
-            error_log('Não foi possível verificar a permissão da empresa. Método execute não disponível.');
         }
     }
     
@@ -609,10 +681,20 @@ function handleUpdateProject($supabase, $userId) {
     }
     
     // Se apenas uma das datas foi fornecida, usar a outra do banco atual se disponível
-    if (isset($data['campaign_start_date']) && !isset($data['campaign_end_date']) && isset($currentProject['campaign_end_date'])) {
-        $campaignEndDate = $currentProject['campaign_end_date'];
-    } else if (!isset($data['campaign_start_date']) && isset($data['campaign_end_date']) && isset($currentProject['campaign_start_date'])) {
-        $campaignStartDate = $currentProject['campaign_start_date'];
+    if (isset($data['campaign_start_date']) && !isset($data['campaign_end_date'])) {
+        // Verificar o tipo do objeto $currentProject para acessar corretamente campaign_end_date
+        if (is_array($currentProject) && isset($currentProject['campaign_end_date'])) {
+            $campaignEndDate = $currentProject['campaign_end_date'];
+        } elseif (is_object($currentProject) && isset($currentProject->campaign_end_date)) {
+            $campaignEndDate = $currentProject->campaign_end_date;
+        }
+    } else if (!isset($data['campaign_start_date']) && isset($data['campaign_end_date'])) {
+        // Verificar o tipo do objeto $currentProject para acessar corretamente campaign_start_date
+        if (is_array($currentProject) && isset($currentProject['campaign_start_date'])) {
+            $campaignStartDate = $currentProject['campaign_start_date'];
+        } elseif (is_object($currentProject) && isset($currentProject->campaign_start_date)) {
+            $campaignStartDate = $currentProject->campaign_start_date;
+        }
     }
     
     // Validar as datas se ambas estiverem definidas
@@ -666,200 +748,253 @@ function handleUpdateProject($supabase, $userId) {
         $updates['is_active'] = (bool)$data['is_active'];
     }
     
+    // Se o status do projeto foi fornecido, atualizá-lo
+    if (isset($data['status'])) {
+        $updates['status'] = $data['status'];
+        error_log('Atualizando status do projeto para: ' . $data['status']);
+    }
+    
     // Atualizar as datas da campanha
     if (isset($data['campaign_start_date'])) {
         $updates['campaign_start_date'] = $campaignStartDate;
+        error_log('Atualizando campaign_start_date para: ' . $campaignStartDate);
     }
     
     if (isset($data['campaign_end_date'])) {
         $updates['campaign_end_date'] = $campaignEndDate;
+        error_log('Atualizando campaign_end_date para: ' . $campaignEndDate);
     }
     
-    // Atualizar no banco de dados
-    // Usar duas etapas para evitar problemas com a ordem dos métodos
-    $baseQuery = $supabase->from('projects');
+    // Log dos dados de atualização
+    error_log('Dados completos para atualização: ' . json_encode($updates));
     
-    // Primeiro adicionar o filtro e depois a atualização
-    $updateQuery = $baseQuery->filter('id', 'eq', $projectId)
-        ->update($updates);
+    try {
+        // Log para iniciar operação
+        error_log("Iniciando operação de atualização do projeto {$projectId}");
+        
+        // Criar uma nova instância do SupabaseAdapter para a operação de update
+        $updateAdapter = SupabaseAdapter::getInstance();
+        
+        // Definir a tabela
+        $updateAdapter->from('projects');
+        
+        // Adicionar o filtro por ID
+        $updateAdapter->filter('id', 'eq', $projectId);
+        
+        // Log para debug antes de chamar directUpdate
+        error_log('Pronto para executar directUpdate no projeto: ' . $projectId);
+        
+        // Executar a operação de atualização usando o método directUpdate que criamos
+        // Este método não depende da propriedade updateData e não causa o erro "updateData is not a function"
+        $response = $updateAdapter->directUpdate($updates);
+        
+        // Log para debug da resposta
+        error_log('Resposta da atualização: ' . json_encode($response));
+    } catch (Exception $e) {
+        // Lidar com exceções que podem ocorrer durante o update
+        error_log('Exceção durante atualização do projeto: ' . $e->getMessage());
+        sendResponse(500, [
+            'error' => 'Erro ao atualizar projeto: ' . $e->getMessage(),
+            'details' => 'Houve um problema ao processar a atualização do projeto.'
+        ]);
+        return;
+    }
     
-    // Verificar se o objeto tem o método execute
-    if (is_object($updateQuery) && method_exists($updateQuery, 'execute')) {
-        $response = $updateQuery->execute();
-        
-        // Verificar erro - adaptar para funcionar com stdClass ou objeto com getError()
-        $error = null;
-        if (is_object($response) && method_exists($response, 'getError')) {
-            $error = $response->getError();
-        } elseif (is_object($response) && isset($response->error)) {
-            $error = $response->error;
-        }
-        
-        if ($error) {
-            $errorMessage = method_exists($error, 'getMessage') ? $error->getMessage() : (is_string($error) ? $error : 'Erro desconhecido');
-            sendResponse(500, ['error' => 'Erro ao atualizar projeto: ' . $errorMessage]);
-            return;
-        }
-        
-        // Obter dados de resposta - adaptar para funcionar com stdClass ou objeto com getData()
-        $responseData = null;
-        if (is_object($response) && method_exists($response, 'getData')) {
-            $responseData = $response->getData();
-        } elseif (is_object($response) && isset($response->data)) {
-            $responseData = $response->data;
+    // Após a operação de update bem-sucedida, processar a resposta
+    // Verificar se houve erro na resposta
+    $error = null;
+    
+    // O SupabaseClient pode retornar erro de várias formas
+    if (is_object($response) && isset($response->error)) {
+        $error = $response->error;
+    } elseif (is_object($response) && method_exists($response, 'getError')) {
+        $error = $response->getError();
+    } elseif (is_object($response) && isset($response->statusCode) && $response->statusCode >= 400) {
+        // Status code de erro também indica problema
+        $errorMsg = isset($response->data->message) ? $response->data->message : 'Erro HTTP ' . $response->statusCode;
+        $error = new Exception($errorMsg);
+    }
+    
+    if ($error) {
+        // Obter a mensagem de erro de maneira segura
+        $errorMessage = '';
+        if (is_object($error) && method_exists($error, 'getMessage')) {
+            $errorMessage = $error->getMessage();
+        } elseif (is_string($error)) {
+            $errorMessage = $error;
         } else {
-            $responseData = $response;
+            $errorMessage = 'Erro desconhecido durante atualização';
         }
         
-        // Obter o primeiro item, se existir
-        $updatedProject = null;
-        if (is_array($responseData) && !empty($responseData)) {
-            $updatedProject = $responseData[0];
-        } elseif (is_object($responseData)) {
-            $updatedProject = $responseData;
-        } else {
-            // Se não conseguimos obter os dados, criar uma resposta básica
-            $updatedProject = array_merge([
-                'id' => $projectId,
-                'name' => $data['name'],
-                'updated_at' => date('c')
-            ], $updates);
-        }
-        
-        // Buscar informações adicionais - nome da empresa
-        $companyName = 'Desconhecida';
-        $companyId = $updatedProject['company_id'] ?? $data['company_id'] ?? null;
-        
-        if ($companyId) {
-            try {
-                $companyQuery = $supabase->from('companies')
-                    ->select('name')
-                    ->filter('id', 'eq', $companyId);
-                    
-                // Verificar se o objeto tem o método execute
-                if (is_object($companyQuery) && method_exists($companyQuery, 'execute')) {
-                    $companyResponse = $companyQuery->execute();
-                    
-                    // Obter dados da resposta
-                    $compData = null;
-                    if (is_object($companyResponse) && method_exists($companyResponse, 'getData')) {
-                        $compData = $companyResponse->getData();
-                    } elseif (is_object($companyResponse) && isset($companyResponse->data)) {
-                        $compData = $companyResponse->data;
-                    } else {
-                        $compData = $companyResponse;
-                    }
-                    
-                    // Extrair o nome da empresa
-                    if (is_array($compData) && !empty($compData)) {
-                        if (isset($compData[0]) && is_array($compData[0]) && isset($compData[0]['name'])) {
-                            $companyName = $compData[0]['name'];
-                        } elseif (isset($compData[0]) && is_object($compData[0]) && isset($compData[0]->name)) {
-                            $companyName = $compData[0]->name;
-                        } else {
-                            $companyName = 'Desconhecida';
-                        }
-                    } elseif (is_object($compData) && isset($compData->name)) {
-                        $companyName = $compData->name;
+        error_log('Erro durante atualização: ' . $errorMessage);
+        sendResponse(500, ['error' => 'Erro ao atualizar projeto: ' . $errorMessage]);
+        return;
+    }
+    
+    // Obter dados da resposta - adaptado para o formato de resposta do SupabaseClient
+    $responseData = null;
+    
+    // O SupabaseClient retorna um objeto com a propriedade data contendo a resposta da API
+    if (is_object($response) && isset($response->data)) {
+        $responseData = $response->data;
+        error_log('Dados extraídos da resposta: ' . json_encode($responseData));
+    } elseif (is_object($response) && method_exists($response, 'getData')) {
+        // Fallback para o caso de usar outro formato de resposta
+        $responseData = $response->getData();
+        error_log('Dados extraídos via getData(): ' . json_encode($responseData));
+    } else {
+        // Último caso, usar a própria resposta
+        $responseData = $response;
+        error_log('Usando a própria resposta como dados');
+    }
+    
+    // Obter o primeiro item, se existir
+    $updatedProject = null;
+    if (is_array($responseData) && !empty($responseData)) {
+        $updatedProject = $responseData[0];
+    } elseif (is_object($responseData)) {
+        $updatedProject = $responseData;
+    } else {
+        // Se não conseguimos obter os dados, criar uma resposta básica
+        $updatedProject = array_merge([
+            'id' => $projectId,
+            'name' => $data['name'],
+            'updated_at' => date('c')
+        ], $updates);
+    }
+    
+    // Buscar informações adicionais - nome da empresa
+    $companyName = 'Desconhecida';
+    $companyId = null;
+    
+    // Extrair company_id do projeto atualizado com segurança de tipo
+    if (is_array($updatedProject) && isset($updatedProject['company_id'])) {
+        $companyId = $updatedProject['company_id'];
+    } elseif (is_object($updatedProject) && isset($updatedProject->company_id)) {
+        $companyId = $updatedProject->company_id;
+    } elseif (isset($data['company_id'])) {
+        $companyId = $data['company_id'];
+    }
+    
+    if ($companyId) {
+        try {
+            $companyQuery = $supabase->from('companies')
+                ->select('name')
+                ->filter('id', 'eq', $companyId);
+            
+            // Verificar se o objeto tem o método execute
+            if (is_object($companyQuery) && method_exists($companyQuery, 'execute')) {
+                $companyResponse = $companyQuery->execute();
+                
+                // Obter dados da resposta
+                $compData = null;
+                if (is_object($companyResponse) && method_exists($companyResponse, 'getData')) {
+                    $compData = $companyResponse->getData();
+                } elseif (is_object($companyResponse) && isset($companyResponse->data)) {
+                    $compData = $companyResponse->data;
+                } else {
+                    $compData = $companyResponse;
+                }
+                
+                // Extrair o nome da empresa
+                if (is_array($compData) && !empty($compData)) {
+                    if (isset($compData[0]) && is_array($compData[0]) && isset($compData[0]['name'])) {
+                        $companyName = $compData[0]['name'];
+                    } elseif (isset($compData[0]) && is_object($compData[0]) && isset($compData[0]->name)) {
+                        $companyName = $compData[0]->name;
                     } else {
                         $companyName = 'Desconhecida';
                     }
+                } elseif (is_object($compData) && isset($compData->name)) {
+                    $companyName = $compData->name;
+                } else {
+                    $companyName = 'Desconhecida';
                 }
-            } catch (Exception $e) {
-                error_log('Erro ao buscar nome da empresa: ' . $e->getMessage());
-                // Continuar com o nome padrão da empresa
             }
+        } catch (Exception $e) {
+            error_log('Erro ao buscar nome da empresa: ' . $e->getMessage());
+            // Continuar com o nome padrão da empresa
         }
-        
-        // Preparar dados formatados para a resposta
-        $projectResponse = [
-            'project' => $updatedProject,
-            'message' => 'Projeto atualizado com sucesso',
-            'details' => [
-                'name' => null,
-                'company' => $companyName,
-                'updated_at' => null,
-                'status' => 'Ativo' // valor padrão
-            ]
-        ];
-        
-        // Obter o nome do projeto com verificação de tipo
-        if (is_array($updatedProject) && isset($updatedProject['name'])) {
-            $projectResponse['details']['name'] = $updatedProject['name'];
-        } elseif (is_object($updatedProject) && isset($updatedProject->name)) {
-            $projectResponse['details']['name'] = $updatedProject->name;
-        } else {
-            $projectResponse['details']['name'] = $data['name'];
-        }
-        
-        // Obter a data de atualização com verificação de tipo
-        if (is_array($updatedProject) && isset($updatedProject['updated_at'])) {
-            $projectResponse['details']['updated_at'] = date('d/m/Y H:i:s', strtotime($updatedProject['updated_at']));
-        } elseif (is_object($updatedProject) && isset($updatedProject->updated_at)) {
-            $projectResponse['details']['updated_at'] = date('d/m/Y H:i:s', strtotime($updatedProject->updated_at));
-        } else {
-            $projectResponse['details']['updated_at'] = date('d/m/Y H:i:s');
-        }
-        
-        // Obter o status com verificação de tipo
-        if (is_array($updatedProject) && isset($updatedProject['is_active'])) {
-            $projectResponse['details']['status'] = $updatedProject['is_active'] ? 'Ativo' : 'Inativo';
-        } elseif (is_object($updatedProject) && isset($updatedProject->is_active)) {
-            $projectResponse['details']['status'] = $updatedProject->is_active ? 'Ativo' : 'Inativo';
-        } elseif (isset($data['is_active'])) {
-            $projectResponse['details']['status'] = $data['is_active'] ? 'Ativo' : 'Inativo';
-        }
-        
-        // Adicionar informações sobre a campanha, se definidas
-        $hasStartDate = false;
-        $hasEndDate = false;
-        $startDateValue = null;
-        $endDateValue = null;
-        
-        // Verificar se temos uma data de início com verificação de tipo
-        if (is_array($updatedProject) && isset($updatedProject['campaign_start_date']) && $updatedProject['campaign_start_date']) {
-            $hasStartDate = true;
-            $startDateValue = $updatedProject['campaign_start_date'];
-        } elseif (is_object($updatedProject) && isset($updatedProject->campaign_start_date) && $updatedProject->campaign_start_date) {
-            $hasStartDate = true;
-            $startDateValue = $updatedProject->campaign_start_date;
-        }
-        
-        // Verificar se temos uma data de término com verificação de tipo
-        if (is_array($updatedProject) && isset($updatedProject['campaign_end_date']) && $updatedProject['campaign_end_date']) {
-            $hasEndDate = true;
-            $endDateValue = $updatedProject['campaign_end_date'];
-        } elseif (is_object($updatedProject) && isset($updatedProject->campaign_end_date) && $updatedProject->campaign_end_date) {
-            $hasEndDate = true;
-            $endDateValue = $updatedProject->campaign_end_date;
-        }
-        
-        // Adicionar informações da campanha à resposta, se tivermos datas
-        if ($hasStartDate || $hasEndDate) {
-            $projectResponse['details']['campaign'] = [];
-            
-            if ($hasStartDate) {
-                $projectResponse['details']['campaign']['start'] = date('d/m/Y', strtotime($startDateValue));
-            }
-            
-            if ($hasEndDate) {
-                $projectResponse['details']['campaign']['end'] = date('d/m/Y', strtotime($endDateValue));
-            }
-        }
-        
-        // Retornar o projeto atualizado com mensagem de sucesso
-        sendResponse(200, $projectResponse);
-    } else {
-        // O objeto não tem o método execute, então vamos retornar um resultado simulado
-        sendResponse(200, [
-            'project' => [
-                'id' => $projectId,
-                'name' => $data['name'],
-                'success' => true
-            ],
-            'message' => 'Solicitação de atualização processada'
-        ]);
     }
+    
+    // Preparar dados formatados para a resposta
+    $projectResponse = [
+        'project' => $updatedProject,
+        'message' => 'Projeto atualizado com sucesso',
+        'details' => [
+            'name' => null,
+            'company' => $companyName,
+            'updated_at' => null,
+            'status' => 'Ativo' // valor padrão
+        ]
+    ];
+    
+    // Obter o nome do projeto com verificação de tipo
+    if (is_array($updatedProject) && isset($updatedProject['name'])) {
+        $projectResponse['details']['name'] = $updatedProject['name'];
+    } elseif (is_object($updatedProject) && isset($updatedProject->name)) {
+        $projectResponse['details']['name'] = $updatedProject->name;
+    } else {
+        $projectResponse['details']['name'] = $data['name'];
+    }
+    
+    // Obter a data de atualização com verificação de tipo
+    if (is_array($updatedProject) && isset($updatedProject['updated_at'])) {
+        $projectResponse['details']['updated_at'] = date('d/m/Y H:i:s', strtotime($updatedProject['updated_at']));
+    } elseif (is_object($updatedProject) && isset($updatedProject->updated_at)) {
+        $projectResponse['details']['updated_at'] = date('d/m/Y H:i:s', strtotime($updatedProject->updated_at));
+    } else {
+        $projectResponse['details']['updated_at'] = date('d/m/Y H:i:s');
+    }
+    
+    // Obter o status com verificação de tipo
+    if (is_array($updatedProject) && isset($updatedProject['is_active'])) {
+        $projectResponse['details']['status'] = $updatedProject['is_active'] ? 'Ativo' : 'Inativo';
+    } elseif (is_object($updatedProject) && isset($updatedProject->is_active)) {
+        $projectResponse['details']['status'] = $updatedProject->is_active ? 'Ativo' : 'Inativo';
+    } elseif (isset($data['is_active'])) {
+        $projectResponse['details']['status'] = $data['is_active'] ? 'Ativo' : 'Inativo';
+    }
+    
+    // Adicionar informações sobre a campanha, se definidas
+    $hasStartDate = false;
+    $hasEndDate = false;
+    $startDateValue = null;
+    $endDateValue = null;
+    
+    // Verificar se temos uma data de início com verificação de tipo
+    if (is_array($updatedProject) && isset($updatedProject['campaign_start_date']) && $updatedProject['campaign_start_date']) {
+        $hasStartDate = true;
+        $startDateValue = $updatedProject['campaign_start_date'];
+    } elseif (is_object($updatedProject) && isset($updatedProject->campaign_start_date) && $updatedProject->campaign_start_date) {
+        $hasStartDate = true;
+        $startDateValue = $updatedProject->campaign_start_date;
+    }
+    
+    // Verificar se temos uma data de término com verificação de tipo
+    if (is_array($updatedProject) && isset($updatedProject['campaign_end_date']) && $updatedProject['campaign_end_date']) {
+        $hasEndDate = true;
+        $endDateValue = $updatedProject['campaign_end_date'];
+    } elseif (is_object($updatedProject) && isset($updatedProject->campaign_end_date) && $updatedProject->campaign_end_date) {
+        $hasEndDate = true;
+        $endDateValue = $updatedProject->campaign_end_date;
+    }
+    
+    // Adicionar informações da campanha à resposta, se tivermos datas
+    if ($hasStartDate || $hasEndDate) {
+        $projectResponse['details']['campaign'] = [];
+        
+        if ($hasStartDate) {
+            $projectResponse['details']['campaign']['start'] = date('d/m/Y', strtotime($startDateValue));
+        }
+        
+        if ($hasEndDate) {
+            $projectResponse['details']['campaign']['end'] = date('d/m/Y', strtotime($endDateValue));
+        }
+    }
+    
+    // Retornar o projeto atualizado com mensagem de sucesso
+    sendResponse(200, $projectResponse);
 }
 
 /**

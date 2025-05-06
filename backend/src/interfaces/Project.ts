@@ -5,31 +5,37 @@ export interface Project {
   name: string;
   description?: string;
   status: ProjectStatus;
-  start_date?: string;
-  end_date?: string;
+  campaign_start_date?: string; // Primary field for start date
+  campaign_end_date?: string;   // Primary field for end date
+  start_date?: string;          // Legacy field
+  end_date?: string;            // Legacy field
   views_count?: number;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
-export type ProjectStatus = 'active' | 'completed' | 'paused' | 'cancelled';
+export type ProjectStatus = 'em_planejamento' | 'em_andamento' | 'pausado' | 'concluido' | 'cancelado';
 
 export interface ProjectCreateRequest {
   name: string;
   company_id: string;
   description?: string;
   status?: ProjectStatus;
-  start_date?: string;
-  end_date?: string;
+  campaign_start_date?: string;
+  campaign_end_date?: string;
+  start_date?: string;          // Legacy field
+  end_date?: string;            // Legacy field
 }
 
 export interface ProjectUpdateRequest {
   name?: string;
   description?: string;
   status?: ProjectStatus;
-  start_date?: string;
-  end_date?: string;
+  campaign_start_date?: string;
+  campaign_end_date?: string;
+  start_date?: string;          // Legacy field
+  end_date?: string;            // Legacy field
   is_active?: boolean;
 }
 

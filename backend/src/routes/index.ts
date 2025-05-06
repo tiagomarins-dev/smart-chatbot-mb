@@ -4,6 +4,7 @@ import contactsRoutes from './contactsRoutes';
 import leadsRoutes from './leadsRoutes';
 import projectsRoutes from './projectsRoutes';
 import authRoutes from './authRoutes';
+import apiKeysRoutes from './apiKeysRoutes';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/companies', companiesRoutes);
 router.use('/contacts', contactsRoutes);
 router.use('/leads', leadsRoutes);
 router.use('/projects', projectsRoutes);
+router.use('/api-keys', apiKeysRoutes);
 
 export default router;

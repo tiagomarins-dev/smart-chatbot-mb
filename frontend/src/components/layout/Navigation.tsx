@@ -53,6 +53,14 @@ const Navigation: React.FC = () => {
                 </li>
                 <li className="nav-item">
                   <Link 
+                    href="/projetos" 
+                    className={`nav-link ${router.pathname.startsWith('/projetos') ? 'active' : ''}`}
+                  >
+                    Projetos
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link 
                     href="/leads" 
                     className={`nav-link ${router.pathname.startsWith('/leads') ? 'active' : ''}`}
                   >
@@ -89,6 +97,18 @@ const Navigation: React.FC = () => {
                     <li>
                       <Link href="/profile" className="dropdown-item">
                         Perfil
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/api-keys" className="dropdown-item">
+                        <i className="bi bi-key me-2"></i>
+                        API Keys
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/api-docs" className="dropdown-item">
+                        <i className="bi bi-file-earmark-text me-2"></i>
+                        Documentação API
                       </Link>
                     </li>
                     <li>

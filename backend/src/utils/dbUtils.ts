@@ -109,25 +109,39 @@ export async function updateData<T>(
   data: Record<string, any>,
   client?: SupabaseClient
 ): Promise<T[]> {
+  console.log(`[dbUtils] Updating data in table: ${table}`);
+  console.log(`[dbUtils] Update filters:`, JSON.stringify(filters));
+  console.log(`[dbUtils] Update data:`, JSON.stringify(data));
+  
   const supabase = client || getSupabaseAdmin();
   
-  let query = supabase
-    .from(table)
-    .update(data);
-  
-  // Apply filters
-  filters.forEach(filter => {
-    query = query.filter(filter.column, filter.operator, filter.value);
-  });
-  
-  const { data: result, error } = await query.select();
-  
-  if (error) {
-    console.error('Database update error:', error);
-    throw new Error(`Database update error: ${error.message}`);
+  try {
+    // Create the update query
+    let query = supabase
+      .from(table)
+      .update(data);
+    
+    // Apply filters
+    filters.forEach(filter => {
+      console.log(`[dbUtils] Adding filter: ${filter.column} ${filter.operator} ${filter.value}`);
+      query = query.filter(filter.column, filter.operator, filter.value);
+    });
+    
+    console.log(`[dbUtils] Executing update query...`);
+    const { data: result, error } = await query.select();
+    
+    if (error) {
+      console.error('[dbUtils] Database update error:', error);
+      throw new Error(`Database update error: ${error.message}`);
+    }
+    
+    console.log(`[dbUtils] Update successful, returned ${result?.length || 0} records`);
+    return (result || []) as T[];
+  } catch (err) {
+    console.error('[dbUtils] Error updating data:', err);
+    console.error('[dbUtils] Stack trace:', err instanceof Error ? err.stack : 'No stack trace');
+    throw err;
   }
-  
-  return (result || []) as T[];
 }
 
 /**

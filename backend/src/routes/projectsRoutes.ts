@@ -8,6 +8,13 @@ import {
 } from '../controllers/projectsController';
 import authenticate from '../middleware/auth';
 
+/**
+ * @swagger
+ * tags:
+ *   name: projects
+ *   description: API para gerenciamento de projetos
+ */
+
 const router = Router();
 
 // Apply authentication middleware to all routes

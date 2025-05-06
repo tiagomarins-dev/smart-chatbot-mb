@@ -81,11 +81,19 @@ export class ApiClient {
    * Make a PUT request
    */
   async put<T>(path: string, data?: any): Promise<ApiResponse<T>> {
+    // Log para debug
+    console.log(`PUT request to: ${API_URL}${path}`);
+    console.log('Data being sent:', data);
+    console.log('JSON data:', data ? JSON.stringify(data) : 'undefined');
+    
     const response = await fetch(`${API_URL}${path}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
     });
+    
+    // Log para debug
+    console.log('Response status:', response.status);
     
     return this.handleResponse<T>(response);
   }
@@ -122,19 +130,45 @@ export class ApiClient {
    * Handle API response
    */
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-    const data = await response.json();
-    
-    // If the response is not in the expected format, normalize it
-    if (data.success === undefined) {
+    try {
+      // Log para debug
+      console.log('Response status before parsing:', response.status);
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      // Parse texto para JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('Parsed data:', data);
+      } catch (e) {
+        console.error('Error parsing JSON:', e);
+        return {
+          success: false,
+          error: 'Invalid JSON response: ' + responseText.substring(0, 100) + '...',
+          statusCode: response.status
+        };
+      }
+      
+      // If the response is not in the expected format, normalize it
+      if (data.success === undefined) {
+        return {
+          success: response.ok,
+          data: response.ok ? data : undefined,
+          error: response.ok ? undefined : data.message || 'Unknown error',
+          statusCode: response.status,
+        };
+      }
+      
+      return data;
+    } catch (e) {
+      console.error('Error in handleResponse:', e);
       return {
-        success: response.ok,
-        data: response.ok ? data : undefined,
-        error: response.ok ? undefined : data.message || 'Unknown error',
-        statusCode: response.status,
+        success: false,
+        error: 'Error processing response: ' + String(e),
+        statusCode: response.status || 500
       };
     }
-    
-    return data;
   }
 }
 

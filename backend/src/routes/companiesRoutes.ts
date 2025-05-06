@@ -8,6 +8,13 @@ import {
 } from '../controllers/companiesController';
 import authenticate from '../middleware/auth';
 
+/**
+ * @swagger
+ * tags:
+ *   name: companies
+ *   description: Gerenciamento de empresas
+ */
+
 const router = Router();
 
 // Apply authentication middleware to all routes

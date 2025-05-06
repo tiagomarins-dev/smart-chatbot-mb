@@ -3,9 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import apiRoutes from './routes';
 import RealtimeService from './services/realtimeService';
 import WebSocketService from './services/websocketService';
+import swaggerSpec from './swagger';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +33,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// API documentation (Swagger)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  swaggerOptions: {
+    docExpansion: 'list',
+    filter: true,
+    showRequestDuration: true,
+  }
+}));
+
+// API json specification endpoint
+app.get('/api/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // API routes
 app.use('/api', apiRoutes);
 
@@ -39,6 +58,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'API Server is running',
     documentation: '/api/docs',
+    swagger_json: '/api/swagger.json',
     version: '1.0.0',
     realtime: true
   });

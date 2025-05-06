@@ -234,7 +234,7 @@ function authenticate() {
     // Verificar cabeçalhos para determinar o método de autenticação
     $headers = getallheaders();
     
-    // Tentar autenticar via API Key primeiro
+    // Tentar autenticar via API Key através do cabeçalho X-API-Key
     if (isset($headers['X-API-Key'])) {
         $apiAuthResult = authenticateApiKey();
         
@@ -250,9 +250,105 @@ function authenticate() {
         }
     }
     
-    // Se não houver API Key, tentar via JWT
-    $jwtAuthResult = authenticateJwt(false);
+    // Verificar se há um Bearer token
+    $authorization = isset($headers['Authorization']) ? $headers['Authorization'] : '';
     
+    if (!empty($authorization) && preg_match('/Bearer\s+(.*)$/i', $authorization, $matches)) {
+        $token = $matches[1];
+        
+        // Verificar se é uma API Key (começa com 'api_')
+        if (strpos($token, 'api_') === 0) {
+            // É uma API Key no formato Bearer
+            try {
+                // Consultar a chave API diretamente no banco
+                require_once __DIR__ . '/../models/Database.php';
+                $db = new Database();
+                
+                $query = "
+                    SELECT ak.*, u.email
+                    FROM api_keys ak
+                    JOIN auth.users u ON ak.user_id = u.id
+                    WHERE ak.key_value = :key_value
+                      AND ak.is_active = TRUE
+                      AND (ak.expires_at IS NULL OR ak.expires_at > NOW())
+                ";
+                
+                $apiKeyData = $db->queryOne($query, ['key_value' => $token]);
+                
+                if ($apiKeyData) {
+                    // Atualizar o último uso
+                    $db->execute(
+                        "UPDATE api_keys SET last_used_at = NOW() WHERE id = :id",
+                        ['id' => $apiKeyData['id']]
+                    );
+                    
+                    return [
+                        'authenticated' => true,
+                        'method' => 'api_key_bearer',
+                        'user_id' => $apiKeyData['user_id'],
+                        'email' => $apiKeyData['email'],
+                        'api_key_id' => $apiKeyData['id']
+                    ];
+                }
+            } catch (Exception $e) {
+                error_log('Erro ao verificar API Key via Bearer: ' . $e->getMessage());
+            }
+        }
+        
+        // Se não for uma API Key ou falhar, tentar como JWT
+        $jwtAuthResult = authenticateJwt(false);
+        if ($jwtAuthResult) {
+            return [
+                'authenticated' => true,
+                'method' => 'jwt',
+                'user_id' => $jwtAuthResult['user_id'],
+                'email' => $jwtAuthResult['email'],
+                'role' => $jwtAuthResult['role'],
+                'exp' => $jwtAuthResult['exp']
+            ];
+        }
+    }
+    
+    // Verificar API key no parâmetro de consulta
+    if (isset($_GET['api_key'])) {
+        try {
+            // Consultar a chave API diretamente no banco
+            require_once __DIR__ . '/../models/Database.php';
+            $db = new Database();
+            
+            $query = "
+                SELECT ak.*, u.email
+                FROM api_keys ak
+                JOIN auth.users u ON ak.user_id = u.id
+                WHERE ak.key_value = :key_value
+                  AND ak.is_active = TRUE
+                  AND (ak.expires_at IS NULL OR ak.expires_at > NOW())
+            ";
+            
+            $apiKeyData = $db->queryOne($query, ['key_value' => $_GET['api_key']]);
+            
+            if ($apiKeyData) {
+                // Atualizar o último uso
+                $db->execute(
+                    "UPDATE api_keys SET last_used_at = NOW() WHERE id = :id",
+                    ['id' => $apiKeyData['id']]
+                );
+                
+                return [
+                    'authenticated' => true,
+                    'method' => 'api_key_query',
+                    'user_id' => $apiKeyData['user_id'],
+                    'email' => $apiKeyData['email'],
+                    'api_key_id' => $apiKeyData['id']
+                ];
+            }
+        } catch (Exception $e) {
+            error_log('Erro ao verificar API Key via query: ' . $e->getMessage());
+        }
+    }
+    
+    // Tentar autenticar via JWT como último recurso
+    $jwtAuthResult = authenticateJwt(false);
     if ($jwtAuthResult) {
         return [
             'authenticated' => true,
