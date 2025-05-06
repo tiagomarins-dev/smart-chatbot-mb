@@ -131,7 +131,20 @@
         
         <!-- Conteúdo principal para usuários autenticados -->
         <div class="auth-required d-none">
+            <!-- Título da página e botão -->
             <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-5">
+                        <h1 class="page-heading"><i class="fas fa-project-diagram me-2"></i>Projetos</h1>
+                        <button id="new-project-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">
+                            <i class="fas fa-plus me-1"></i> Novo Projeto
+                        </button>
+                    </div>
+                    <div id="project-alert" class="alert d-none" role="alert"></div>
+                </div>
+            </div>
+            <!-- Filtro e lista de projetos -->
+            <div class="row mb-4">
                 <div class="col-md-3">
                     <!-- Filtro de Empresas -->
                     <div class="card mb-4 fade-in">
@@ -145,14 +158,12 @@
                                 </div>
                                 <p class="mt-2">Carregando empresas...</p>
                             </div>
-                            
                             <div id="company-filter-empty" class="text-center my-3 d-none">
                                 <p class="text-muted">Nenhuma empresa encontrada.</p>
                                 <a href="empresas.php" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-plus-circle me-1"></i> Cadastrar Empresa
                                 </a>
                             </div>
-                            
                             <div id="company-filter-list" class="d-none">
                                 <div class="mb-3">
                                     <select id="company-select" class="form-select" required>
@@ -164,21 +175,9 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="col-md-9">
-                    <div class="card fade-in">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Gerenciamento de Projetos</h5>
-                            <button id="new-project-btn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectModal">
-                                <i class="fas fa-plus me-1"></i> Novo Projeto
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <!-- Alerta para feedback -->
-                            <div id="project-alert" class="alert d-none" role="alert"></div>
-                            
-                            <!-- Tabela de projetos -->
-                            <div id="projects-container">
+                    <!-- Container de projetos -->
+                    <div id="projects-container">
                                 <div id="projects-loading" class="text-center my-5">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Carregando...</span>
@@ -211,13 +210,9 @@
                                                 <!-- Preenchido via JavaScript -->
                                             </tbody>
                                         </table>
-                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
                 </div>
-            </div>
         </div>
     </div>
     
