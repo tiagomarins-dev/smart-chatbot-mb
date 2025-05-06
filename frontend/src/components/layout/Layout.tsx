@@ -13,8 +13,8 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({
   children,
-  title = 'Smart CRM',
-  description = 'Sistema CRM para gerenciar empresas, projetos e leads',
+  title = 'Smart-ChatBox',
+  description = 'Sistema inteligente para gerenciar empresas, projetos e leads',
 }) => {
   const { isAuthenticated } = useAuth();
   
@@ -295,7 +295,7 @@ const Layout: React.FC<LayoutProps> = ({
         <footer className="py-3 bg-light">
           <div className="container text-center">
             <p className="mb-0">
-              &copy; {new Date().getFullYear()} Smart CRM. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} Smart-ChatBox. Todos os direitos reservados.
             </p>
           </div>
         </footer>

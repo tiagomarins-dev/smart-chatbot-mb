@@ -45,9 +45,10 @@ export interface Project {
   id?: string;
   user_id: string;
   company_id: string;
+  company_name?: string;
   name: string;
   description?: string;
-  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  status: 'em_planejamento' | 'em_andamento' | 'pausado' | 'concluido' | 'cancelado';
   start_date?: string;
   end_date?: string;
   views_count?: number;

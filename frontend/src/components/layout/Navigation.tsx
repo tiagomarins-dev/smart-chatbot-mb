@@ -15,8 +15,8 @@ const Navigation: React.FC = () => {
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container">
-        <Link href="/" className="navbar-brand">
-          Smart CRM
+        <Link href="/" className="navbar-brand" style={{ color: '#7e57c2', fontWeight: 'bold' }}>
+          Smart-ChatBox
         </Link>
         
         <button
@@ -45,8 +45,8 @@ const Navigation: React.FC = () => {
                 </li>
                 <li className="nav-item">
                   <Link 
-                    href="/companies" 
-                    className={`nav-link ${router.pathname.startsWith('/companies') ? 'active' : ''}`}
+                    href="/empresas" 
+                    className={`nav-link ${router.pathname.startsWith('/empresas') ? 'active' : ''}`}
                   >
                     Empresas
                   </Link>

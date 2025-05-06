@@ -7,9 +7,9 @@ const Home: React.FC = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   return (
-    <Layout title="Home | Smart CRM">
+    <Layout title="Home | Smart-ChatBox">
       <div className="text-center py-5">
-        <h1 className="display-4">Bem-vindo ao Smart CRM</h1>
+        <h1 className="display-4">Bem-vindo ao Smart-ChatBox</h1>
         <p className="lead">Um poderoso sistema de gestão de relacionamento com clientes</p>
         
         {isLoading ? (

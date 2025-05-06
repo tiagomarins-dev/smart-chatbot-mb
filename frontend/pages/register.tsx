@@ -22,7 +22,7 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <Layout title="Cadastro | Smart CRM">
+    <Layout title="Cadastro | Smart-ChatBox">
       <div className="row justify-content-center">
         <div className="col-md-6 col-lg-4">
           <RegisterForm onSuccess={handleRegisterSuccess} />
