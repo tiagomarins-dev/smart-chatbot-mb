@@ -452,7 +452,7 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
   try {
     const userId = req.user?.id;
     const projectId = req.params.id;
-    const updateData: ProjectUpdateRequest = req.body;
+    const projectUpdateData: ProjectUpdateRequest = req.body;
 
     if (!projectId) {
       sendError(res, 'Project ID is required', HttpStatus.BAD_REQUEST);
@@ -480,34 +480,34 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
     };
 
     // Add fields if provided
-    if (updateData.name) {
-      updates.name = updateData.name.trim();
+    if (projectUpdateData.name) {
+      updates.name = projectUpdateData.name.trim();
     }
 
-    if (updateData.description !== undefined) {
-      updates.description = updateData.description;
+    if (projectUpdateData.description !== undefined) {
+      updates.description = projectUpdateData.description;
     }
 
-    if (updateData.status) {
-      updates.status = updateData.status;
+    if (projectUpdateData.status) {
+      updates.status = projectUpdateData.status;
     }
 
     // Handle both campaign_start_date and start_date (for backward compatibility)
-    if (updateData.campaign_start_date) {
-      updates.campaign_start_date = updateData.campaign_start_date;
-    } else if (updateData.start_date) {
-      updates.campaign_start_date = updateData.start_date;
+    if (projectUpdateData.campaign_start_date) {
+      updates.campaign_start_date = projectUpdateData.campaign_start_date;
+    } else if (projectUpdateData.start_date) {
+      updates.campaign_start_date = projectUpdateData.start_date;
     }
 
     // Handle both campaign_end_date and end_date (for backward compatibility)
-    if (updateData.campaign_end_date) {
-      updates.campaign_end_date = updateData.campaign_end_date;
-    } else if (updateData.end_date) {
-      updates.campaign_end_date = updateData.end_date;
+    if (projectUpdateData.campaign_end_date) {
+      updates.campaign_end_date = projectUpdateData.campaign_end_date;
+    } else if (projectUpdateData.end_date) {
+      updates.campaign_end_date = projectUpdateData.end_date;
     }
 
-    if (typeof updateData.is_active === 'boolean') {
-      updates.is_active = updateData.is_active;
+    if (typeof projectUpdateData.is_active === 'boolean') {
+      updates.is_active = projectUpdateData.is_active;
     }
 
     // Update project

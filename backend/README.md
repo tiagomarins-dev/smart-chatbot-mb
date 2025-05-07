@@ -69,6 +69,28 @@ The server will run at http://localhost:3000 by default (or the port specified i
 - `POST /api/leads` - Capture a new lead
 - `PUT /api/leads/:id/status` - Update lead status
 - `GET /api/leads/stats` - Get lead statistics
+- `GET /api/leads/search` - Advanced search for leads with filtering
+
+### Lead Events
+
+- `GET /api/lead-events/:id/events` - Get all events for a specific lead
+- `GET /api/lead-events/:id/events/summary` - Get summary of events for a lead
+- `POST /api/lead-events/:id/events` - Create a new event for a lead
+
+### Event Capture API
+
+- `POST /api/events` - Capture an event and automatically associate with a lead by phone or email
+
+### WhatsApp Integration
+
+- `GET /api/whatsapp/status` - Get WhatsApp connection status
+- `GET /api/whatsapp/qrcode` - Get QR code for WhatsApp authentication
+- `POST /api/whatsapp/connect` - Connect to WhatsApp
+- `POST /api/whatsapp/disconnect` - Disconnect from WhatsApp
+- `POST /api/whatsapp/send` - Send a WhatsApp message
+- `GET /api/whatsapp/messages` - Get all WhatsApp messages
+- `GET /api/whatsapp/messages/:number` - Get messages from a specific contact
+- `POST /api/whatsapp/webhooks/whatsapp` - Webhook for WhatsApp events
 
 ## Building for Production
 

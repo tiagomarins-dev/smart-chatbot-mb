@@ -34,7 +34,12 @@ const NewLeadPage: NextPage = () => {
       <div className="container py-4">
         <div className="row">
           <div className="col-lg-8 offset-lg-2">
-            <h1 className="mb-4">Add New Lead</h1>
+            <div className="d-flex align-items-center mb-4">
+              <div className="p-2 rounded-circle me-3" style={{ backgroundColor: 'rgba(126, 87, 194, 0.1)' }}>
+                <i className="bi bi-person-plus-fill fs-4" style={{ color: '#7e57c2' }}></i>
+              </div>
+              <h1 className="mb-0" style={{ color: '#7e57c2', fontWeight: 'bold' }}>Adicionar Novo Lead</h1>
+            </div>
             <LeadForm projectId={project_id as string} />
           </div>
         </div>

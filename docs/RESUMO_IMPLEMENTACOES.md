@@ -182,30 +182,83 @@ Este documento resume todas as implementações feitas no projeto Smart-ChatBox 
 - `/api/swagger.json`: Documentação do novo endpoint
 - `/README.md`: Instruções atualizadas para configuração
 
+## 9. Sistema de Gerenciamento de Leads
+
+### Funcionalidades Implementadas:
+- Cadastro, edição e gerenciamento de leads
+- Associação de leads a projetos
+- Rastreamento de UTM parameters
+- Status de leads com histórico de alterações
+- API RESTful para gerenciamento de leads
+- Interface para visualização e busca de leads
+- Estatísticas e relatórios de leads
+
+### Arquivos Criados:
+- `/supabase/migrations/00011_leads.sql`: Esquema do banco para leads
+- `/api/v1/leads.php`: Endpoints da API para leads
+- `/src/php/html/leads.php`: Interface de gerenciamento
+- `/src/php/html/assets/js/leads.js`: Controlador para leads
+
+## 10. Integração com WhatsApp
+
+### Funcionalidades Implementadas:
+- Conexão com WhatsApp via QR code
+- Visualização do status de conexão
+- Envio e recebimento de mensagens
+- Serviço Docker para gestão da conexão
+- Webhooks para processamento de eventos
+- Sincronização em tempo real
+
+### Arquivos Criados:
+- `/backend/whatsapp-api/`: Implementação da API WhatsApp
+- `/backend/src/controllers/whatsappController.ts`: Controlador de WhatsApp
+- `/backend/src/routes/whatsappRoutes.ts`: Rotas para WhatsApp
+- `/frontend/pages/whatsapp/`: Interface do usuário para WhatsApp
+
+## 11. Sistema de Eventos de Leads
+
+### Funcionalidades Implementadas:
+- Registro de todas as interações com leads
+- Registro automático de mensagens WhatsApp
+- API para captura de eventos de várias origens
+- Resumo de atividades por lead
+- Busca inteligente de leads por telefone ou email
+- Estrutura flexível para armazenar dados de eventos
+
+### Arquivos Criados:
+- `/supabase/migrations/00016_lead_events.sql`: Esquema para eventos de leads
+- `/backend/src/services/leadEventsService.ts`: Serviço de eventos
+- `/backend/src/controllers/leadEventsController.ts`: Controlador de eventos
+- `/backend/src/controllers/eventCaptureController.ts`: API de captura de eventos
+- `/backend/src/routes/leadEventsRoutes.ts`: Rotas para eventos
+- `/backend/src/routes/eventCaptureRoutes.ts`: Rotas para captura de eventos
+- `/docs/LEAD_EVENTS.md`: Documentação detalhada
+
 ## Próximos Passos Possíveis
 
 1. **Implementar Dashboard de Analytics:**
    - Visualização de uso de API
    - Gráficos de requisições por tempo
    - Análise de taxa de erros
+   - Visualização da linha do tempo de eventos de leads
    
 2. **Expandir Recursos da API:**
-   - Endpoints para grupos de contatos
-   - Suporte a mensagens de mídia
-   - Templates de mensagens
-   - Integração com IA para automação
+   - Suporte a mensagens de mídia no WhatsApp
+   - Templates de mensagens automáticas
+   - Integração com IA para automação de respostas
+   - Segmentação avançada de leads por comportamento
    
 3. **Melhorar Documentação da API:**
    - Adicionar console interativo de teste
    - Exemplos em mais linguagens de programação
-   - Guias de caso de uso
+   - Guias de caso de uso para integração de eventos
 
 4. **Aprimorar Segurança:**
    - Implementar autenticação multifator
    - Rotação automática de chaves API
    - Sistema avançado de detecção de abusos
    
-5. **Sistema de Leads:**
-   - Implementar cadastro e gerenciamento de leads
-   - Associar leads a projetos e empresas
-   - Adicionar relatórios e métricas de conversão
+5. **Implementar Automações:**
+   - Fluxos automáticos baseados em eventos de leads
+   - Notificações para eventos importantes
+   - Campanhas automáticas baseadas em comportamento

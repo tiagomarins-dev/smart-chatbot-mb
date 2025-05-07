@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp QR Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .qr-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #128C7E;
+            margin-bottom: 20px;
+        }
+        p {
+            margin-top: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-container">
+        <h1>WhatsApp QR Code</h1>
+        <div id="qr-code">
+            <p>Carregando QR Code...</p>
+        </div>
+        <p>Escaneie este QR Code com seu WhatsApp para conectar</p>
+    </div>
+
+    <script>
+        async function loadQrCode() {
+            try {
+                const response = await fetch('http://localhost:9032/api/whatsapp/qrcode');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.qrcode) {
+                    const qrContainer = document.getElementById('qr-code');
+                    qrContainer.innerHTML = `<img src="${data.data.qrcode}" alt="WhatsApp QR Code" width="250">`;
+                } else {
+                    document.getElementById('qr-code').innerHTML = 
+                        '<p style="color: red;">Erro ao carregar QR Code. Tente novamente mais tarde.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading QR code:', error);
+                document.getElementById('qr-code').innerHTML = 
+                    '<p style="color: red;">Erro ao carregar QR Code. Tente novamente mais tarde.</p>';
+            }
+        }
+
+        // Load QR code when page loads
+        loadQrCode();
+
+        // Refresh QR code every 30 seconds
+        setInterval(loadQrCode, 30000);
+    </script>
+</body>
+</html>

@@ -31,46 +31,77 @@ export interface QueryOptions {
 /**
  * Execute a query with the provided options
  */
-export async function executeQuery<T>(options: QueryOptions, client?: SupabaseClient): Promise<T[]> {
-  const supabase = client || getSupabaseAdmin();
-  
-  // Start with the base query
-  let query = supabase
-    .from(options.table)
-    .select(options.select || '*');
-  
-  // Apply filters
-  if (options.filters && options.filters.length > 0) {
-    options.filters.forEach(filter => {
-      query = query.filter(filter.column, filter.operator, filter.value);
-    });
+export async function executeQuery<T>(
+  optionsOrQuery: QueryOptions | string, 
+  clientOrParams?: SupabaseClient | any[],
+  client?: SupabaseClient
+): Promise<T[]> {
+  // Se for uma string, assume que é uma consulta SQL direta
+  if (typeof optionsOrQuery === 'string') {
+    const query = optionsOrQuery;
+    const params = Array.isArray(clientOrParams) ? clientOrParams : [];
+    const supabase = client || getSupabaseAdmin();
+    
+    try {
+      console.log(`Executing raw SQL query: ${query} with params:`, params);
+      const { data, error } = await supabase.rpc('execute_sql', { 
+        query_text: query,
+        params: params 
+      });
+      
+      if (error) {
+        console.error('Database raw query error:', error);
+        throw new Error(`Database raw query error: ${error.message}`);
+      }
+      
+      return (data || []) as T[];
+    } catch (err) {
+      console.error('Error executing raw SQL:', err);
+      return [] as T[];
+    }
+  } else {
+    // Caso contrário, use a implementação original
+    const options = optionsOrQuery;
+    const supabase = (Array.isArray(clientOrParams) ? client : clientOrParams as SupabaseClient) || getSupabaseAdmin();
+    
+    // Start with the base query
+    let query = supabase
+      .from(options.table)
+      .select(options.select || '*');
+    
+    // Apply filters
+    if (options.filters && options.filters.length > 0) {
+      options.filters.forEach(filter => {
+        query = query.filter(filter.column, filter.operator, filter.value);
+      });
+    }
+    
+    // Apply ordering
+    if (options.order) {
+      Object.entries(options.order).forEach(([column, direction]) => {
+        query = query.order(column, { ascending: direction === 'asc' });
+      });
+    }
+    
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+    
+    // Execute the query
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Database query error:', error);
+      throw new Error(`Database query error: ${error.message}`);
+    }
+    
+    return (data || []) as T[];
   }
-  
-  // Apply ordering
-  if (options.order) {
-    Object.entries(options.order).forEach(([column, direction]) => {
-      query = query.order(column, { ascending: direction === 'asc' });
-    });
-  }
-  
-  // Apply pagination
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
-  
-  if (options.offset) {
-    query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
-  }
-  
-  // Execute the query
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Database query error:', error);
-    throw new Error(`Database query error: ${error.message}`);
-  }
-  
-  return (data || []) as T[];
 }
 
 /**

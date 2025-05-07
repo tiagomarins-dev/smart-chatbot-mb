@@ -22,15 +22,30 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/api-docs": [
+    "/contacts": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/api-docs.js"
+      "static/chunks/pages/contacts.js"
     ],
-    "/api-keys": [
+    "/leads": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/api-keys.js"
+      "static/chunks/pages/leads.js"
+    ],
+    "/leads/[id]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/leads/[id].js"
+    ],
+    "/projetos": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/projetos.js"
+    ],
+    "/whatsapp": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/whatsapp.js"
     ]
   },
   "ampFirstPages": []

@@ -75,6 +75,15 @@ const Navigation: React.FC = () => {
                     Contatos
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link 
+                    href="/whatsapp" 
+                    className={`nav-link ${router.pathname.startsWith('/whatsapp') ? 'active' : ''}`}
+                  >
+                    <i className="bi bi-whatsapp me-1 text-success"></i>
+                    WhatsApp
+                  </Link>
+                </li>
               </>
             )}
           </ul>

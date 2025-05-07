@@ -105,6 +105,28 @@ export interface LeadStatsResponse {
   project_id?: string;
 }
 
+// Lead Events
+export interface LeadEvent {
+  id: string;
+  lead_id: string;
+  event_type: string;
+  event_data: {
+    message?: string;
+    channel?: string;
+    form_data?: any;
+    page_url?: string;
+    content?: string;
+    [key: string]: any;
+  };
+  origin?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LeadEventsResponse {
+  events: LeadEvent[];
+}
+
 // Contact
 export interface Contact {
   id?: string;

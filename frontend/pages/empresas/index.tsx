@@ -93,7 +93,7 @@ const CompaniesPage: React.FC = () => {
     <Layout title="Empresas | Smart-ChatBox">
       <div className="container py-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h1 className="fw-bold" style={{ color: '#7e57c2' }}>Empresas</h1>
+          <h1 className="fw-bold" style={{ color: 'var(--primary-color)' }}>Empresas</h1>
           <Link href="/empresas/new" className="btn btn-primary">
             <i className="bi bi-plus-lg me-2"></i>
             Nova Empresa
@@ -109,7 +109,7 @@ const CompaniesPage: React.FC = () => {
               <div className="col-md-8">
                 <div className="input-group">
                   <span className="input-group-text" style={{ backgroundColor: 'transparent' }}>
-                    <i className="bi bi-search" style={{ color: '#7e57c2' }}></i>
+                    <i className="bi bi-search" style={{ color: 'var(--primary-color)' }}></i>
                   </span>
                   <input
                     type="text"
@@ -169,7 +169,7 @@ const CompaniesPage: React.FC = () => {
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <h5 className="card-title fw-bold">{company.name}</h5>
                       <div className="p-2 rounded-circle" style={{ backgroundColor: "rgba(126, 87, 194, 0.1)" }}>
-                        <i className="bi bi-building fs-5" style={{ color: "#7e57c2" }}></i>
+                        <i className="bi bi-building fs-5" style={{ color: "var(--primary-color)" }}></i>
                       </div>
                     </div>
                     <div className="d-flex justify-content-between align-items-center">

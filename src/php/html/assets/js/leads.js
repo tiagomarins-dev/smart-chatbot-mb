@@ -5,6 +5,7 @@
  */
 
 import authService from './auth.js';
+import LeadEventsManager from './leads-events.js';
 
 class LeadsManager {
     constructor() {
@@ -14,6 +15,12 @@ class LeadsManager {
         this.leadsApiUrl = `${this.apiBaseUrl}/leads`;
         this.companiesApiUrl = `${this.apiBaseUrl}/companies`;
         this.projectsApiUrl = `${this.apiBaseUrl}/projects`;
+        
+        // Inicializa o gerenciador de eventos de leads
+        this.leadEventsManager = new LeadEventsManager();
+        
+        // Define o modo de visualização do gerenciador de eventos
+        this.leadEventsManager.setViewType('card');
         
         // Elementos DOM - Alertas e containers gerais
         this.leadsAlert = document.getElementById('leads-alert');
@@ -71,7 +78,7 @@ class LeadsManager {
         this.leadUtmContentInput = document.getElementById('lead-utm-content');
         this.saveLeadBtn = document.getElementById('save-lead-btn');
         
-        // Detalhes do lead
+        // Detalhes do lead (modal)
         this.detailLeadName = document.getElementById('detail-lead-name');
         this.detailLeadEmail = document.getElementById('detail-lead-email');
         this.detailLeadPhone = document.getElementById('detail-lead-phone');
@@ -83,6 +90,22 @@ class LeadsManager {
         this.detailLeadOrigin = document.getElementById('detail-lead-origin');
         this.detailLeadCreatedAt = document.getElementById('detail-lead-created-at');
         this.editFromDetailsBtn = document.getElementById('edit-from-details-btn');
+        
+        // Detalhes do lead (card)
+        this.leadDetailsSection = document.getElementById('lead-details-section');
+        this.cardLeadName = document.getElementById('card-lead-name');
+        this.cardDetailLeadName = document.getElementById('card-detail-lead-name');
+        this.cardDetailLeadEmail = document.getElementById('card-detail-lead-email');
+        this.cardDetailLeadPhone = document.getElementById('card-detail-lead-phone');
+        this.cardDetailLeadStatus = document.getElementById('card-detail-lead-status');
+        this.cardDetailLeadNotes = document.getElementById('card-detail-lead-notes');
+        this.cardDetailLeadUtmSource = document.getElementById('card-detail-lead-utm-source');
+        this.cardDetailLeadUtmMedium = document.getElementById('card-detail-lead-utm-medium');
+        this.cardDetailLeadUtmCampaign = document.getElementById('card-detail-lead-utm-campaign');
+        this.cardDetailLeadOrigin = document.getElementById('card-detail-lead-origin');
+        this.cardDetailLeadCreatedAt = document.getElementById('card-detail-lead-created-at');
+        this.cardEditLeadBtn = document.getElementById('card-edit-lead-btn');
+        this.closeLeadDetailsBtn = document.getElementById('close-lead-details-btn');
         
         // Botões de exclusão
         this.deleteLeadName = document.getElementById('delete-lead-name');
@@ -248,9 +271,30 @@ class LeadsManager {
             this.showEditLeadModal(this.currentLeadId);
         });
         
+        // Eventos para o card de detalhes
+        if (this.cardEditLeadBtn) {
+            this.cardEditLeadBtn.addEventListener('click', () => {
+                this.showEditLeadModal(this.currentLeadId);
+            });
+        }
+        
+        if (this.closeLeadDetailsBtn) {
+            this.closeLeadDetailsBtn.addEventListener('click', () => {
+                this.hideLeadDetails();
+            });
+        }
+        
         // Resetar formulário quando modal é fechado
         document.getElementById('leadModal').addEventListener('hidden.bs.modal', () => {
             this.resetLeadForm();
+        });
+        
+        // Garantir que os elementos do modal de detalhes estejam disponíveis quando o modal for exibido
+        document.getElementById('leadDetailsModal').addEventListener('shown.bs.modal', () => {
+            console.log('[LeadsManager] Modal de detalhes exibido, inicializando elementos DOM');
+            // Reinicializa os elementos DOM do gerenciador de eventos
+            this.leadEventsManager.setViewType('modal');
+            this.leadEventsManager.initDOMElements();
         });
     }
     
@@ -346,6 +390,9 @@ class LeadsManager {
      */
     async loadLeads(projectId) {
         try {
+            // Esconde o card de detalhes do lead
+            this.hideLeadDetails();
+            
             this.showLeadsTableLoading();
             
             // Atualizar o estado atual
@@ -704,7 +751,16 @@ class LeadsManager {
             });
             
             const viewBtn = row.querySelector('.view-lead-btn');
-            viewBtn.addEventListener('click', () => this.showLeadDetails(lead.id));
+            viewBtn.addEventListener('click', () => {
+                // Esconde o card se já estiver visível (toggle)
+                if (this.currentLeadId === lead.id && !this.leadDetailsSection.classList.contains('d-none')) {
+                    this.hideLeadDetails();
+                } else {
+                    // Esconde qualquer card aberto e mostra o novo
+                    this.hideLeadDetails();
+                    this.showLeadDetails(lead.id);
+                }
+            });
             
             const editBtn = row.querySelector('.edit-lead-btn');
             editBtn.addEventListener('click', () => this.showEditLeadModal(lead.id));
@@ -823,6 +879,9 @@ class LeadsManager {
      * Mostra a seção de projetos (esconde a seção de leads)
      */
     showProjectsSection() {
+        // Esconde o card de detalhes do lead
+        this.hideLeadDetails();
+        
         this.projectsSection.classList.remove('d-none');
         this.leadsDetailSection.classList.add('d-none');
     }
@@ -895,10 +954,10 @@ class LeadsManager {
     }
     
     /**
-     * Mostra os detalhes de um lead
+     * Mostra os detalhes de um lead no card na página principal
      * @param {string} leadId ID do lead
      */
-    showLeadDetails(leadId) {
+    async showLeadDetails(leadId) {
         // Busca o lead
         const lead = this.leads.find(l => l.id === leadId);
         
@@ -907,22 +966,29 @@ class LeadsManager {
             return;
         }
         
-        // Preenche os campos de detalhes
-        this.detailLeadName.textContent = lead.name || '-';
-        this.detailLeadEmail.textContent = lead.email || '-';
-        this.detailLeadPhone.textContent = this.formatPhone(lead.phone) || '-';
+        // Salva o ID do lead atual
+        this.currentLeadId = leadId;
+        
+        // Configurando o gerenciador de eventos para usar o card
+        this.leadEventsManager.setViewType('card');
+        
+        // Preenche os campos do card de detalhes
+        this.cardLeadName.textContent = lead.name || '-';
+        this.cardDetailLeadName.textContent = lead.name || '-';
+        this.cardDetailLeadEmail.textContent = lead.email || '-';
+        this.cardDetailLeadPhone.textContent = this.formatPhone(lead.phone) || '-';
         
         // Status com formatação
         const statusBadge = `<span class="badge ${this.getStatusClass(lead.status)}">${this.formatStatus(lead.status)}</span>`;
-        this.detailLeadStatus.innerHTML = statusBadge;
+        this.cardDetailLeadStatus.innerHTML = statusBadge;
         
         // Observações
-        this.detailLeadNotes.textContent = lead.notes || '-';
+        this.cardDetailLeadNotes.textContent = lead.notes || '-';
         
         // UTMs
-        this.detailLeadUtmSource.textContent = lead.utm_source || '-';
-        this.detailLeadUtmMedium.textContent = lead.utm_medium || '-';
-        this.detailLeadUtmCampaign.textContent = lead.utm_campaign || '-';
+        this.cardDetailLeadUtmSource.textContent = lead.utm_source || '-';
+        this.cardDetailLeadUtmMedium.textContent = lead.utm_medium || '-';
+        this.cardDetailLeadUtmCampaign.textContent = lead.utm_campaign || '-';
         
         // Origem do lead
         let origin = '-';
@@ -932,17 +998,52 @@ class LeadsManager {
                 origin += ` / ${lead.utm_campaign}`;
             }
         }
-        this.detailLeadOrigin.textContent = origin;
+        this.cardDetailLeadOrigin.textContent = origin;
         
         // Data de criação
         const createdDate = new Date(lead.created_at);
-        this.detailLeadCreatedAt.textContent = createdDate.toLocaleDateString('pt-BR') + ' ' + createdDate.toLocaleTimeString('pt-BR');
+        this.cardDetailLeadCreatedAt.textContent = createdDate.toLocaleDateString('pt-BR') + ' ' + createdDate.toLocaleTimeString('pt-BR');
         
-        // Salva o ID do lead atual
-        this.currentLeadId = leadId;
+        // Mostra o card de detalhes
+        this.leadDetailsSection.classList.remove('d-none');
         
-        // Mostra o modal
-        this.leadDetailsModal.show();
+        // Carrega os eventos do lead
+        try {
+            console.log('[LeadsManager] Iniciando carregamento de eventos para o lead:', leadId);
+            
+            // Obter o token de autenticação
+            const session = await authService.getSession();
+            if (!session) {
+                console.error('[LeadsManager] Usuário não autenticado');
+                return;
+            }
+            
+            console.log('[LeadsManager] Sessão obtida:', !!session);
+            
+            // Prepara os headers
+            const headers = await this.getAuthHeaders(session);
+            console.log('[LeadsManager] Headers preparados:', Object.keys(headers));
+            
+            // Carrega os eventos do lead
+            console.log('[LeadsManager] Chamando leadEventsManager.loadLeadEvents');
+            if (!this.leadEventsManager) {
+                console.error('[LeadsManager] leadEventsManager não está definido!');
+                return;
+            }
+            
+            await this.leadEventsManager.loadLeadEvents(leadId, headers);
+            console.log('[LeadsManager] Eventos carregados com sucesso');
+        } catch (error) {
+            console.error('[LeadsManager] Erro ao carregar eventos do lead:', error);
+        }
+    }
+    
+    /**
+     * Oculta o card de detalhes do lead
+     */
+    hideLeadDetails() {
+        this.leadDetailsSection.classList.add('d-none');
+        this.currentLeadId = null;
     }
     
     /**

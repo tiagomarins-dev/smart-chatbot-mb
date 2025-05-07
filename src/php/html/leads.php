@@ -325,6 +325,116 @@
                             <i class="fas fa-arrow-left me-1"></i> Voltar para Projetos
                         </button>
                         
+                        <!-- Card de detalhes e eventos de lead -->
+                        <div id="lead-details-section" class="mb-4 d-none">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card fade-in">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="fas fa-user me-2"></i>Detalhes do Lead: <span id="card-lead-name">-</span></h6>
+                                            <div>
+                                                <button id="card-edit-lead-btn" class="btn btn-outline-primary btn-sm me-2">
+                                                    <i class="fas fa-edit me-1"></i> Editar
+                                                </button>
+                                                <button id="close-lead-details-btn" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-times me-1"></i> Fechar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-md-6">
+                                                    <h6>Informações Pessoais</h6>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">Nome:</label>
+                                                        <p id="card-detail-lead-name" class="mb-2">-</p>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">E-mail:</label>
+                                                        <p id="card-detail-lead-email" class="mb-2">-</p>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">Telefone:</label>
+                                                        <p id="card-detail-lead-phone" class="mb-2">-</p>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">Status:</label>
+                                                        <p id="card-detail-lead-status" class="mb-2">-</p>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Informações da Campanha</h6>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">UTM Source:</label>
+                                                        <p id="card-detail-lead-utm-source" class="mb-2">-</p>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">UTM Medium:</label>
+                                                        <p id="card-detail-lead-utm-medium" class="mb-2">-</p>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">UTM Campaign:</label>
+                                                        <p id="card-detail-lead-utm-campaign" class="mb-2">-</p>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="fw-bold mb-0">Origem:</label>
+                                                        <p id="card-detail-lead-origin" class="mb-2">-</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row mb-3">
+                                                <div class="col-12">
+                                                    <h6>Observações</h6>
+                                                    <p id="card-detail-lead-notes" class="border p-2 rounded bg-light">-</p>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <h6>Data de Criação</h6>
+                                                    <p id="card-detail-lead-created-at">-</p>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class="row mt-3">
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 class="mb-0 d-flex align-items-center">
+                                                            <i class="fas fa-history me-2 text-primary"></i>
+                                                            <span>Histórico de Eventos</span>
+                                                        </h6>
+                                                        <div>
+                                                            <span id="card-lead-events-loading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div id="card-lead-events-empty" class="text-center my-4 p-3 border rounded bg-light d-none">
+                                                        <i class="fas fa-info-circle text-muted mb-2" style="font-size: 1.5rem;"></i>
+                                                        <p class="text-muted mb-0">Nenhum evento registrado para este lead.</p>
+                                                    </div>
+                                                    <div id="card-lead-events-container" class="mt-2">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-sm table-hover">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th style="width: 25%">Data</th>
+                                                                        <th style="width: 20%">Tipo</th>
+                                                                        <th style="width: 20%">Origem</th>
+                                                                        <th style="width: 35%">Detalhes</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody id="card-lead-events-table-body">
+                                                                    <!-- Preenchido via JavaScript -->
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="card fade-in">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0"><i class="fas fa-users me-2"></i>Leads do Projeto: <span id="selected-project-name"></span></h6>
@@ -558,6 +668,34 @@
                             <p id="detail-lead-created-at">-</p>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="d-flex justify-content-between align-items-center">
+                                <span>Histórico de Eventos</span>
+                                <span id="lead-events-loading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></span>
+                            </h6>
+                            <div id="lead-events-empty" class="text-center my-3 d-none">
+                                <p class="text-muted">Nenhum evento registrado para este lead.</p>
+                            </div>
+                            <div id="lead-events-container" class="mt-2">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Tipo</th>
+                                                <th>Origem</th>
+                                                <th>Detalhes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lead-events-table-body">
+                                            <!-- Preenchido via JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-primary me-2" id="edit-from-details-btn">
@@ -614,13 +752,16 @@
         {
             "imports": {
                 "./auth-utils.js": "./assets/js/auth-utils.js",
-                "./leads.js": "./assets/js/leads.js"
+                "./leads.js": "./assets/js/leads.js",
+                "./leads-events.js": "./assets/js/leads-events.js"
             }
         }
     </script>
     <script type="module">
         import './assets/js/main.js';
         import LeadsManager from './assets/js/leads.js';
+        // Para depuração
+        window.debugMode = true;
         
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializar gerenciador de leads

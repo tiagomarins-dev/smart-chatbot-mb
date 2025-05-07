@@ -5,6 +5,9 @@ import leadsRoutes from './leadsRoutes';
 import projectsRoutes from './projectsRoutes';
 import authRoutes from './authRoutes';
 import apiKeysRoutes from './apiKeysRoutes';
+import whatsappRoutes from './whatsappRoutes';
+import leadEventsRoutes from './leadEventsRoutes';
+import eventCaptureRoutes from './eventCaptureRoutes';
 
 const router = Router();
 
@@ -22,7 +25,10 @@ router.use('/auth', authRoutes);
 router.use('/companies', companiesRoutes);
 router.use('/contacts', contactsRoutes);
 router.use('/leads', leadsRoutes);
+router.use('/lead-events', leadEventsRoutes);
 router.use('/projects', projectsRoutes);
 router.use('/api-keys', apiKeysRoutes);
+router.use('/whatsapp', whatsappRoutes);
+router.use('/events', eventCaptureRoutes);
 
 export default router;

@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { ApiResponse, LeadsResponse, LeadResponse, LeadStatsResponse } from '../interfaces';
+import { ApiResponse, LeadsResponse, LeadResponse, LeadStatsResponse, LeadEventsResponse } from '../interfaces';
 
 export const leadsApi = {
   /**
@@ -14,6 +14,13 @@ export const leadsApi = {
    */
   getLead: async (id: string): Promise<ApiResponse<LeadResponse>> => {
     return await apiClient.get<LeadResponse>(`/leads/${id}`);
+  },
+  
+  /**
+   * Get lead events
+   */
+  getLeadEvents: async (id: string): Promise<ApiResponse<LeadEventsResponse>> => {
+    return await apiClient.get<LeadEventsResponse>(`/leads/${id}/events-list`);
   },
   
   /**
@@ -51,6 +58,26 @@ export const leadsApi = {
     new_status: string;
   }>> => {
     return await apiClient.put<any>(`/leads/${id}/status`, data);
+  },
+  
+  /**
+   * Update a lead (full update)
+   */
+  updateLead: async (
+    id: string,
+    data: {
+      name: string;
+      first_name: string;
+      email: string;
+      phone: string;
+      status: 'novo' | 'qualificado' | 'contatado' | 'convertido' | 'desistiu' | 'inativo';
+      notes?: string;
+    }
+  ): Promise<ApiResponse<{
+    message: string;
+    lead: any;
+  }>> => {
+    return await apiClient.put<any>(`/leads/${id}`, data);
   },
   
   /**

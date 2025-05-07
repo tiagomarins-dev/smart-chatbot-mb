@@ -83,7 +83,7 @@ const LeadsDashboard: React.FC<LeadsDashboardProps> = ({ projectId, period = 30 
   }, [isConnected, hasRealTimeUpdates, projectId, stats, subscribeToLeads, unsubscribeFromLeads]);
 
   if (loading) {
-    return <div className="text-center py-5"><div className="spinner-border"></div></div>;
+    return null;
   }
 
   if (error) {

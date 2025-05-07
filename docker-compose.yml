@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -11,6 +9,8 @@ services:
       - backend_node_modules:/usr/src/app/node_modules
     env_file:
       - ./.env
+    environment:
+      - RUNNING_IN_DOCKER=true
     ports:
       - '9032:3000'
     restart: unless-stopped
@@ -26,7 +26,25 @@ services:
     environment:
       - NODE_ENV=development
     ports:
-      - '9031:3000'
+      - '9034:3000'
+    depends_on:
+      - backend
+    restart: unless-stopped
+  
+  whatsapp-api:
+    build:
+      context: ./backend/whatsapp-api
+      dockerfile: Dockerfile
+    container_name: crm-whatsapp-api
+    ports:
+      - '9033:3000'
+    volumes:
+      - whatsapp_data:/app/wa_data
+    environment:
+      - PORT=3000
+      - WEBHOOK_URL=http://backend:3000/api/whatsapp/webhooks/whatsapp
+      - WA_DATA_PATH=/app/wa_data
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
     depends_on:
       - backend
     restart: unless-stopped
@@ -34,3 +52,4 @@ services:
 volumes:
   backend_node_modules:
   frontend_node_modules:
+  whatsapp_data:

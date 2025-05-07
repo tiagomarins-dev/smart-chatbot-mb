@@ -66,3 +66,12 @@ export interface LeadStatsResponse {
   project_id?: string;
   error?: string;
 }
+
+export interface LeadEvent {
+  id?: string;
+  lead_id: string;
+  event_type: string;
+  event_data: Record<string, any>;
+  origin?: string;
+  created_at?: string;
+}

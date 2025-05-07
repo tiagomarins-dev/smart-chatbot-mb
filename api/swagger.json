@@ -49,6 +49,14 @@
       "description": "Gerenciamento de leads"
     },
     {
+      "name": "lead-events",
+      "description": "Gerenciamento de eventos de leads"
+    },
+    {
+      "name": "events",
+      "description": "Captura de eventos"
+    },
+    {
       "name": "api-keys",
       "description": "Gerenciamento de chaves de API"
     },
@@ -1858,6 +1866,536 @@
         }
       }
     },
+    "/v1/events": {
+      "post": {
+        "tags": ["events"],
+        "summary": "Capturar evento",
+        "description": "Captura um evento e automaticamente o associa a um lead pelo telefone ou email",
+        "operationId": "captureEvent",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Dados do evento",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCaptureInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Evento capturado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Event captured successfully"
+                        },
+                        "lead_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "event_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "123e4567-e89b-12d3-a456-426614174001"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/leads/{id}/events-list": {
+      "get": {
+        "tags": ["leads", "lead-events"],
+        "summary": "Listar eventos de um lead (Endpoint dedicado)",
+        "description": "Retorna a lista de eventos de um lead específico usando o novo endpoint dedicado na API do backend TypeScript",
+        "operationId": "getLeadEventsList",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do lead",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "lead_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/LeadEvent"
+                          }
+                        },
+                        "count": {
+                          "type": "integer",
+                          "example": 5
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado ou não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lead-events/{id}/events": {
+      "get": {
+        "tags": ["lead-events"],
+        "summary": "Listar eventos de um lead (Endpoint legado)",
+        "description": "Retorna a lista de eventos de um lead específico. Este é o endpoint legado, recomenda-se usar o novo endpoint dedicado `/v1/leads/{id}/events-list`",
+        "operationId": "getLeadEvents",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do lead",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filtrar por tipo de evento",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "query",
+            "description": "Filtrar por origem do evento",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/LeadEvent"
+                          }
+                        },
+                        "lead_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "filters": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "origin": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acesso proibido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["lead-events"],
+        "summary": "Criar evento para um lead",
+        "description": "Cria um novo evento para um lead específico",
+        "operationId": "createLeadEvent",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do lead",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Dados do evento",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadEventInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Evento criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "event": {
+                          "$ref": "#/components/schemas/LeadEvent"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acesso proibido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lead-events/{id}/events/summary": {
+      "get": {
+        "tags": ["lead-events"],
+        "summary": "Obter resumo de eventos de um lead",
+        "description": "Retorna um resumo dos eventos de um lead específico, agrupados por tipo e origem",
+        "operationId": "getLeadEventsSummary",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID do lead",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo de eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "lead_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "total_events": {
+                          "type": "integer",
+                          "example": 15
+                        },
+                        "last_activity": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2023-06-10T09:45:00Z"
+                        },
+                        "events_by_type": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "whatsapp_message": 8,
+                            "form_submit": 2,
+                            "page_view": 5
+                          }
+                        },
+                        "events_by_origin": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer"
+                          },
+                          "example": {
+                            "whatsapp": 8,
+                            "website": 7
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Acesso proibido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Lead não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/webhooks": {
       "get": {
         "tags": ["webhooks"],
@@ -2602,6 +3140,110 @@
             "example": true
           }
         }
+      },
+      "LeadEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174001"
+          },
+          "lead_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "event_type": {
+            "type": "string",
+            "example": "whatsapp_message"
+          },
+          "event_data": {
+            "type": "object",
+            "example": {
+              "direction": "incoming",
+              "message": "Olá, gostaria de saber mais sobre o produto X",
+              "messageId": "ABCDEF123456",
+              "timestamp": "2023-06-01T12:00:00Z"
+            }
+          },
+          "origin": {
+            "type": "string",
+            "example": "whatsapp"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-06-01T12:00:00Z"
+          }
+        }
+      },
+      "LeadEventInput": {
+        "type": "object",
+        "required": ["event_type", "event_data"],
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "description": "Tipo do evento",
+            "example": "whatsapp_message"
+          },
+          "event_data": {
+            "type": "object",
+            "description": "Dados específicos do evento",
+            "example": {
+              "direction": "outgoing",
+              "message": "Obrigado pelo contato, como posso ajudar?",
+              "messageId": "ABCDEF123456",
+              "timestamp": "2023-06-01T12:00:00Z"
+            }
+          },
+          "origin": {
+            "type": "string",
+            "description": "Origem do evento",
+            "example": "whatsapp"
+          }
+        }
+      },
+      "EventCaptureInput": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Número de telefone para identificar o lead",
+            "example": "5521999998877"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email para identificar o lead",
+            "example": "cliente@example.com"
+          },
+          "event_type": {
+            "type": "string",
+            "description": "Tipo do evento",
+            "example": "whatsapp_message"
+          },
+          "event_text": {
+            "type": "string",
+            "description": "Texto ou mensagem do evento",
+            "example": "Olá, gostaria de saber mais sobre o produto X"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Origem do evento",
+            "example": "whatsapp"
+          },
+          "additional_data": {
+            "type": "object",
+            "description": "Dados adicionais em formato de objeto",
+            "example": {
+              "direction": "incoming",
+              "messageId": "ABCDEF123456",
+              "timestamp": "2023-06-01T12:00:00Z"
+            }
+          }
+        },
+        "required": ["event_type"]
       }
     }
   }

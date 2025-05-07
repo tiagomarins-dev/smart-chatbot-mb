@@ -36,13 +36,7 @@ const options: swaggerJSDoc.Options = {
           in: 'header',
           name: 'Authorization',
           description: 'Entre com sua chave API no formato: "Bearer api_xxxxxxxx"',
-        },
-        apiKeyQuery: {
-          type: 'apiKey',
-          in: 'query',
-          name: 'api_key',
-          description: 'Entre com sua chave API como parâmetro de consulta',
-        },
+        }
       },
       schemas: {
         // Auth schemas
@@ -509,9 +503,6 @@ const options: swaggerJSDoc.Options = {
       },
       {
         apiKeyAuth: [],
-      },
-      {
-        apiKeyQuery: [],
       },
     ],
   },

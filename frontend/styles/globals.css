@@ -568,6 +568,50 @@ body.dark-mode .card-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
+/* Ensure text elements in dark mode cards are properly visible */
+body.dark-mode .card-title,
+body.dark-mode .card-subtitle,
+body.dark-mode .card-text,
+body.dark-mode .card h1,
+body.dark-mode .card h2,
+body.dark-mode .card h3,
+body.dark-mode .card h4,
+body.dark-mode .card h5,
+body.dark-mode .card h6,
+body.dark-mode .card p,
+body.dark-mode .card span:not(.badge) {
+  color: var(--dark-text) !important;
+}
+
+body.dark-mode .text-muted {
+  color: rgba(248, 249, 250, 0.6) !important;
+}
+
+body.dark-mode .card .btn-outline-primary,
+body.dark-mode .card .btn-outline-secondary,
+body.dark-mode .card .btn-outline-danger {
+  color: var(--dark-text);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .card .btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+body.dark-mode .card .btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+body.dark-mode .card .btn-outline-danger:hover {
+  background-color: var(--danger-color);
+  color: white;
+  border-color: var(--danger-color);
+}
+
 /* Add some subtle hover effects to cards */
 .card:hover {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
@@ -722,6 +766,33 @@ body.dark-mode a:not(.btn):not(.navbar-brand):hover {
   color: #d7b9ff;
 }
 
+/* Specific fixes for empresas page in dark mode */
+body.dark-mode .card .text-muted.small {
+  color: rgba(248, 249, 250, 0.6) !important;
+}
+
+body.dark-mode .nav-tabs .nav-link {
+  color: var(--dark-text);
+}
+
+body.dark-mode .nav-tabs .nav-link.active {
+  background-color: transparent;
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+body.dark-mode input.form-control {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  border-color: var(--dark-border);
+}
+
+body.dark-mode .input-group-text {
+  background-color: var(--dark-bg) !important;
+  color: var(--dark-text);
+  border-color: var(--dark-border);
+}
+
 /* Form controls in dark mode */
 body.dark-mode .form-control,
 body.dark-mode .form-select {
@@ -786,4 +857,158 @@ body.dark-mode .notification-icon.notification-companies {
 body.dark-mode .notification-icon.notification-contacts {
   background-color: rgba(255, 183, 77, 0.25);
   color: #ffe0b2;
+}
+
+/* Timeline styling for lead events */
+.lead-timeline {
+  margin: 0;
+  padding: 0;
+}
+
+/* Timeline date badge */
+.timeline-date {
+  margin: 1.5rem 0 1rem;
+}
+
+/* Timeline events */
+.timeline-event {
+  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.timeline-event:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.dark-mode .timeline-event {
+  background-color: var(--dark-card);
+  border-color: var(--dark-border);
+}
+
+body.dark-mode .timeline-event:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Timeline icon */
+.timeline-icon .rounded-circle {
+  transition: transform 0.2s;
+}
+
+.timeline-event:hover .timeline-icon .rounded-circle {
+  transform: scale(1.1);
+}
+
+/* Timeline content */
+.timeline-content p {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 767.98px) {
+  .lead-timeline {
+    padding: 0 !important;
+  }
+  
+  .timeline-date {
+    margin: 1.5rem 0.75rem 1rem;
+  }
+  
+  .timeline-event {
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+  }
+  
+  .timeline-icon .rounded-circle {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  .timeline-content h6 {
+    font-size: 0.95rem;
+  }
+  
+  .timeline-content p {
+    font-size: 0.9rem;
+  }
+}
+
+/* Dark mode support */
+body.dark-mode .timeline-date .badge {
+  background-color: rgba(126, 87, 194, 0.25) !important;
+  color: #d1c4e9 !important;
+}
+
+body.dark-mode .timeline-content h6 {
+  color: var(--dark-text);
+}
+
+body.dark-mode .timeline-content p {
+  color: rgba(248, 249, 250, 0.75) !important;
+}
+
+/* Animation for timeline events */
+.timeline-group {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.timeline-event {
+  animation: fadeInRight 0.5s ease-out;
+  animation-fill-mode: both;
+}
+
+.timeline-group:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.timeline-group:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.timeline-group:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.timeline-group .timeline-event:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.timeline-group .timeline-event:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.timeline-group .timeline-event:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.timeline-group .timeline-event:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.timeline-group .timeline-event:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

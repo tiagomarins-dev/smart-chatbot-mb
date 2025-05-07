@@ -123,7 +123,6 @@ export async function verifyApiKey(key: string): Promise<AuthResult> {
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   // Try to get authentication from different sources
   const authHeader = req.headers.authorization;
-  const apiKeyQuery = req.query.api_key as string;
   
   // First try Authorization header
   if (authHeader) {
@@ -144,11 +143,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     }
   }
   
-  // If not in Authorization header, try query parameter
-  if (apiKeyQuery) {
-    authenticateWithApiKey(apiKeyQuery, req, res, next);
-    return;
-  }
   
   // No authentication provided
   sendError(res, 'Authentication required', HttpStatus.UNAUTHORIZED);

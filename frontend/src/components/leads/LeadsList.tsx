@@ -5,11 +5,12 @@ import leadsApi from '../../api/leads';
 import { useRealtime } from '../../contexts/RealtimeContext';
 
 interface LeadsListProps {
-  projectId?: string;
+  filters?: Record<string, any>;
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
+const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -24,23 +25,69 @@ const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
     const fetchLeads = async () => {
       try {
         setLoading(true);
-        const response = await leadsApi.getLeads(projectId ? { project_id: projectId } : undefined);
+        const queryParams: Record<string, any> = {};
+        
+        // Add project_id filter if it exists
+        if (filters.project_id) {
+          queryParams.project_id = filters.project_id;
+        }
+        
+        const response = await leadsApi.getLeads(queryParams);
         
         if (response.success && response.data?.leads) {
           setLeads(response.data.leads);
         } else {
-          setError(response.error || 'Failed to fetch leads');
+          setError(response.error || 'Falha ao buscar leads');
         }
       } catch (err) {
         console.error('Error fetching leads:', err);
-        setError('An error occurred while fetching leads');
+        setError('Ocorreu um erro ao buscar os leads');
       } finally {
         setLoading(false);
       }
     };
 
     fetchLeads();
-  }, [projectId]);
+  }, [filters.project_id]);
+  
+  // Apply client-side filters
+  useEffect(() => {
+    let result = [...leads];
+    
+    // Filter by company_id - this requires checking the lead's projects
+    if (filters.company_id) {
+      result = result.filter(lead => {
+        // This is a simplified approach - in a real app, you might need to check lead_project table
+        // This assumes leads have a company_id field or that you've already joined the data
+        return lead.company_id === filters.company_id;
+      });
+    }
+    
+    // Filter by search term (name, email, phone)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(lead => 
+        (lead.name && lead.name.toLowerCase().includes(searchLower)) ||
+        (lead.email && lead.email.toLowerCase().includes(searchLower)) ||
+        (lead.phone && lead.phone.includes(filters.search))
+      );
+    }
+    
+    // Filter by UTM parameters
+    if (filters.utm_source) {
+      result = result.filter(lead => lead.utm_source === filters.utm_source);
+    }
+    
+    if (filters.utm_medium) {
+      result = result.filter(lead => lead.utm_medium === filters.utm_medium);
+    }
+    
+    if (filters.utm_campaign) {
+      result = result.filter(lead => lead.utm_campaign === filters.utm_campaign);
+    }
+    
+    setFilteredLeads(result);
+  }, [leads, filters]);
   
   // Set up real-time updates when connection is established
   useEffect(() => {
@@ -48,7 +95,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
       // Handler for lead events
       const handleLeadEvent = (data: any) => {
         // For project-specific lists, only process events for this project
-        if (projectId && data.new && data.new.project_id !== projectId) {
+        if (filters.project_id && data.new && data.new.project_id !== filters.project_id) {
           return;
         }
         
@@ -74,7 +121,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
         // Handle DELETE
         else if (data.event === 'DELETE' && data.old) {
           const oldLead = data.old as Lead;
-          if (projectId && oldLead.project_id !== projectId) {
+          if (filters.project_id && oldLead.project_id !== filters.project_id) {
             return;
           }
           setLeads(prev => prev.filter(l => l.id !== oldLead.id));
@@ -90,7 +137,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
         unsubscribeFromLeads(handleLeadEvent);
       };
     }
-  }, [isConnected, hasRealTimeUpdates, projectId, subscribeToLeads, unsubscribeFromLeads]);
+  }, [isConnected, hasRealTimeUpdates, filters.project_id, subscribeToLeads, unsubscribeFromLeads]);
 
   const handleStatusUpdate = async (id: string, status: Lead['status']) => {
     try {
@@ -114,26 +161,77 @@ const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
   };
 
   if (loading) {
-    return <div className="text-center py-5"><div className="spinner-border"></div></div>;
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border" style={{ color: '#7e57c2' }}></div>
+        <p className="mt-2 text-muted">Carregando leads...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="alert alert-danger">{error}</div>;
+    return (
+      <div className="alert" style={{ 
+        backgroundColor: 'rgba(239, 83, 80, 0.1)', 
+        color: '#ef5350', 
+        borderRadius: '12px',
+        border: '1px solid rgba(239, 83, 80, 0.2)',
+        padding: '1rem'
+      }}>
+        <i className="bi bi-exclamation-triangle me-2"></i>
+        {error}
+      </div>
+    );
   }
 
   if (leads.length === 0) {
     return (
-      <div className="text-center py-5">
-        <p className="mb-4">No leads found</p>
-        <Link href="/leads/new" className="btn btn-primary">
-          Add New Lead
-        </Link>
+      <div className="card" style={{ 
+        borderRadius: '12px', 
+        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.07)',
+        border: 'none',
+        padding: '2rem'
+      }}>
+        <div className="text-center py-5">
+          <div className="p-3 mb-4 rounded-circle mx-auto" style={{ backgroundColor: 'rgba(126, 87, 194, 0.1)', width: 'fit-content' }}>
+            <i className="bi bi-people fs-1" style={{ color: '#7e57c2' }}></i>
+          </div>
+          <p className="mb-4">Nenhum lead encontrado</p>
+          <Link href="/leads/new" className="btn" style={{ 
+            backgroundColor: '#7e57c2',
+            color: 'white',
+            borderRadius: '8px',
+            padding: '0.6rem 1.25rem',
+            fontWeight: 500,
+            border: 'none',
+            boxShadow: '0 2px 8px rgba(126, 87, 194, 0.25)'
+          }}>
+            <i className="bi bi-plus-circle me-2"></i>
+            Adicionar Lead
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  // No leads found after filtering
+  if (filteredLeads.length === 0) {
+    return (
+      <div className="alert" style={{ 
+        backgroundColor: 'rgba(255, 183, 77, 0.1)', 
+        color: '#ffb74d', 
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 183, 77, 0.2)',
+        padding: '1rem'
+      }}>
+        <i className="bi bi-funnel me-2"></i>
+        Nenhum lead encontrado com os filtros aplicados. Tente ajustar seus critérios de busca.
       </div>
     );
   }
   
   // Sort leads by creation date (newest first)
-  const sortedLeads = [...leads].sort((a, b) => {
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
     if (!a.created_at) return 1;
     if (!b.created_at) return -1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -155,113 +253,195 @@ const LeadsList: React.FC<LeadsListProps> = ({ projectId }) => {
   // Helper function to get status display name
   const getStatusDisplayName = (status: Lead['status']) => {
     switch (status) {
-      case 'novo': return 'New';
-      case 'qualificado': return 'Qualified';
-      case 'contatado': return 'Contacted';
-      case 'convertido': return 'Converted';
-      case 'desistiu': return 'Gave Up';
-      case 'inativo': return 'Inactive';
+      case 'novo': return 'Novo';
+      case 'qualificado': return 'Qualificado';
+      case 'contatado': return 'Contatado';
+      case 'convertido': return 'Convertido';
+      case 'desistiu': return 'Desistiu';
+      case 'inativo': return 'Inativo';
       default: return status;
     }
   };
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-          Leads
-          {isConnected && hasRealTimeUpdates && (
-            <span className="badge bg-success ms-2" style={{ fontSize: '0.5em', verticalAlign: 'middle' }}>
-              <i className="bi bi-lightning-fill me-1"></i>
-              Live
+    <div className="card" style={{ 
+      borderRadius: '12px', 
+      boxShadow: '0 6px 16px rgba(0, 0, 0, 0.07)',
+      border: 'none',
+      animation: 'slideInUp 0.5s ease-out',
+      animationDelay: '0.3s'
+    }}>
+      <div className="card-header" style={{ 
+        backgroundColor: 'transparent',
+        borderBottom: 'none',
+        padding: '1rem 1.25rem',
+        borderRadius: '12px'
+      }}>
+        <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center">
+            <div className="p-2 rounded-circle me-3" style={{ backgroundColor: 'rgba(126, 87, 194, 0.1)' }}>
+              <i className="bi bi-people fs-5" style={{ color: '#7e57c2' }}></i>
+            </div>
+            <h5 className="mb-0" style={{ color: '#7e57c2', fontWeight: 'bold' }}>
+              Leads
+              {isConnected && hasRealTimeUpdates && (
+                <span className="badge ms-2" style={{ 
+                  fontSize: '0.7em', 
+                  backgroundColor: 'rgba(102, 187, 106, 0.1)', 
+                  color: '#66bb6a',
+                  padding: '0.35em 0.7em',
+                  fontWeight: 500,
+                  borderRadius: '6px'
+                }}>
+                  <i className="bi bi-lightning-fill me-1"></i>
+                  Live
+                </span>
+              )}
+            </h5>
+          </div>
+          <div className="d-flex align-items-center">
+            <span className="text-muted me-3" style={{ fontSize: '0.9rem' }}>
+              {filteredLeads.length} {filteredLeads.length === 1 ? 'lead' : 'leads'}
             </span>
-          )}
-        </h2>
-        <Link href="/leads/new" className="btn btn-primary">
-          Add Lead
-        </Link>
+            <Link href="/leads/new" className="btn" style={{ 
+              backgroundColor: '#7e57c2',
+              color: 'white',
+              borderRadius: '8px',
+              padding: '0.5rem 1rem',
+              fontWeight: 500,
+              border: 'none',
+              boxShadow: '0 2px 8px rgba(126, 87, 194, 0.25)',
+              fontSize: '0.9rem'
+            }}>
+              <i className="bi bi-plus-circle me-2"></i>
+              Novo Lead
+            </Link>
+          </div>
+        </div>
       </div>
       
-      <div className="table-responsive">
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th className="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedLeads.map((lead) => (
-              <tr key={lead.id}>
-                <td>
-                  <Link href={`/leads/${lead.id}`}>
-                    {lead.name}
-                  </Link>
-                </td>
-                <td>{lead.email}</td>
-                <td>{lead.phone}</td>
-                <td>
-                  <div className="dropdown">
-                    <span 
-                      className={`badge ${getStatusBadgeColor(lead.status)} dropdown-toggle`}
-                      role="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      {getStatusDisplayName(lead.status)}
-                    </span>
-                    <ul className="dropdown-menu">
-                      <li><button 
-                        className="dropdown-item" 
-                        onClick={() => lead.id && handleStatusUpdate(lead.id, 'novo')}
-                      >New</button></li>
-                      <li><button 
-                        className="dropdown-item" 
-                        onClick={() => lead.id && handleStatusUpdate(lead.id, 'qualificado')}
-                      >Qualified</button></li>
-                      <li><button 
-                        className="dropdown-item" 
-                        onClick={() => lead.id && handleStatusUpdate(lead.id, 'contatado')}
-                      >Contacted</button></li>
-                      <li><button 
-                        className="dropdown-item" 
-                        onClick={() => lead.id && handleStatusUpdate(lead.id, 'convertido')}
-                      >Converted</button></li>
-                      <li><hr className="dropdown-divider" /></li>
-                      <li><button 
-                        className="dropdown-item" 
-                        onClick={() => lead.id && handleStatusUpdate(lead.id, 'desistiu')}
-                      >Gave Up</button></li>
-                      <li><button 
-                        className="dropdown-item" 
-                        onClick={() => lead.id && handleStatusUpdate(lead.id, 'inativo')}
-                      >Inactive</button></li>
-                    </ul>
-                  </div>
-                </td>
-                <td>
-                  {lead.created_at
-                    ? new Date(lead.created_at).toLocaleDateString()
-                    : 'N/A'}
-                </td>
-                <td className="text-end">
-                  <div className="btn-group">
+      <div className="card-body" style={{ padding: '0' }}>
+        <div className="table-responsive">
+          <table className="table table-hover" style={{ 
+            margin: '0',
+            borderRadius: '0 0 12px 12px',
+            overflow: 'hidden'
+          }}>
+            <thead style={{ backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
+              <tr>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Nome</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>E-mail</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Telefone</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Status</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Criado em</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161', textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedLeads.map((lead) => (
+                <tr key={lead.id} style={{ 
+                  transition: 'transform 0.2s ease, background-color 0.2s ease',
+                  borderLeft: '3px solid transparent',
+                  ':hover': {
+                    transform: 'translateX(3px)',
+                    borderLeft: '3px solid #7e57c2',
+                    backgroundColor: 'rgba(126, 87, 194, 0.03)'
+                  }
+                }}>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
+                    <Link href={`/leads/${lead.id}`} style={{ 
+                      color: '#673ab7', 
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}>
+                      {lead.name}
+                    </Link>
+                  </td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>{lead.email}</td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>{lead.phone}</td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
+                    <div className="dropdown">
+                      <span 
+                        className="badge dropdown-toggle"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        style={{ 
+                          backgroundColor: getStatusBadgeColor(lead.status),
+                          padding: '0.4em 0.7em',
+                          fontWeight: 500,
+                          borderRadius: '6px'
+                        }}
+                      >
+                        {getStatusDisplayName(lead.status)}
+                      </span>
+                      <ul className="dropdown-menu" style={{ 
+                        borderRadius: '8px',
+                        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)',
+                        border: 'none',
+                        padding: '0.5rem'
+                      }}>
+                        <li><button 
+                          className="dropdown-item" 
+                          onClick={() => lead.id && handleStatusUpdate(lead.id, 'novo')}
+                          style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
+                        >Novo</button></li>
+                        <li><button 
+                          className="dropdown-item" 
+                          onClick={() => lead.id && handleStatusUpdate(lead.id, 'qualificado')}
+                          style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
+                        >Qualificado</button></li>
+                        <li><button 
+                          className="dropdown-item" 
+                          onClick={() => lead.id && handleStatusUpdate(lead.id, 'contatado')}
+                          style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
+                        >Contatado</button></li>
+                        <li><button 
+                          className="dropdown-item" 
+                          onClick={() => lead.id && handleStatusUpdate(lead.id, 'convertido')}
+                          style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
+                        >Convertido</button></li>
+                        <li><hr className="dropdown-divider" /></li>
+                        <li><button 
+                          className="dropdown-item text-danger" 
+                          onClick={() => lead.id && handleStatusUpdate(lead.id, 'desistiu')}
+                          style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
+                        >Desistiu</button></li>
+                        <li><button 
+                          className="dropdown-item text-secondary" 
+                          onClick={() => lead.id && handleStatusUpdate(lead.id, 'inativo')}
+                          style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
+                        >Inativo</button></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
+                    {lead.created_at
+                      ? new Date(lead.created_at).toLocaleDateString()
+                      : 'N/A'}
+                  </td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle', textAlign: 'right' }}>
                     <Link
                       href={`/leads/${lead.id}/edit`}
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn btn-sm"
+                      style={{ 
+                        backgroundColor: 'rgba(126, 87, 194, 0.1)', 
+                        color: '#7e57c2',
+                        borderRadius: '6px',
+                        padding: '0.4em 0.7em',
+                        fontWeight: 500,
+                        border: 'none'
+                      }}
                     >
-                      Edit
+                      <i className="bi bi-pencil me-1"></i>
+                      Editar
                     </Link>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

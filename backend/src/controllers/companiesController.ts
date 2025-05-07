@@ -13,7 +13,6 @@ import { HttpStatus, sendError, sendSuccess } from '../utils/responseUtils';
  *     security:
  *       - bearerAuth: []
  *       - apiKeyAuth: []
- *       - apiKeyQuery: []
  *     parameters:
  *       - in: query
  *         name: id
@@ -95,7 +94,6 @@ export async function getCompanies(req: Request, res: Response): Promise<void> {
  *     security:
  *       - bearerAuth: []
  *       - apiKeyAuth: []
- *       - apiKeyQuery: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -184,7 +182,6 @@ export async function getCompanyById(req: Request, res: Response): Promise<void>
  *     security:
  *       - bearerAuth: []
  *       - apiKeyAuth: []
- *       - apiKeyQuery: []
  *     requestBody:
  *       required: true
  *       content:
@@ -272,7 +269,6 @@ export async function createCompany(req: Request, res: Response): Promise<void> 
  *     security:
  *       - bearerAuth: []
  *       - apiKeyAuth: []
- *       - apiKeyQuery: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -411,7 +407,6 @@ export async function updateCompany(req: Request, res: Response): Promise<void> 
  *     security:
  *       - bearerAuth: []
  *       - apiKeyAuth: []
- *       - apiKeyQuery: []
  *     parameters:
  *       - in: path
  *         name: id
