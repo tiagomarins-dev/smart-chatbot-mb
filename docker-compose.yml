@@ -30,21 +30,20 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-  
+    
   whatsapp-api:
     build:
       context: ./backend/whatsapp-api
       dockerfile: Dockerfile
     container_name: crm-whatsapp-api
     ports:
-      - '9033:3000'
+      - '9029:3000'  # Map to port 9029 to match existing configuration
     volumes:
       - whatsapp_data:/app/wa_data
     environment:
       - PORT=3000
-      - WEBHOOK_URL=http://backend:3000/api/whatsapp/webhooks/whatsapp
+      - WEBHOOK_URL=http://backend:3000/api/webhooks/whatsapp
       - WA_DATA_PATH=/app/wa_data
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
     depends_on:
       - backend
     restart: unless-stopped
@@ -52,4 +51,4 @@ services:
 volumes:
   backend_node_modules:
   frontend_node_modules:
-  whatsapp_data:
+  whatsapp_data:  # Add this volume for WhatsApp session persistence

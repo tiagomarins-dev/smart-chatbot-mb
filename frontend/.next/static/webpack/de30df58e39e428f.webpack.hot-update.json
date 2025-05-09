@@ -1,1 +1,0 @@
-{"c":["pages/leads/[id]","pages/leads","pages/leads/[id]/edit","webpack"],"r":["pages/leads/[id]/edit"],"m":["./node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?absolutePagePath=%2Fusr%2Fsrc%2Fapp%2Fpages%2Fleads%2F%5Bid%5D%2Fedit.tsx&page=%2Fleads%2F%5Bid%5D%2Fedit!","./pages/leads/[id]/edit.tsx","./src/components/leads/LeadForm.tsx"]}

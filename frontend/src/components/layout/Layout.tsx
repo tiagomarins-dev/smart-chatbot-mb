@@ -187,6 +187,8 @@ const Layout: React.FC<LayoutProps> = ({
         <link rel="icon" href="/favicon.ico" />
         {/* Add Bootstrap Icons CSS */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+        {/* Add Animate.css for animations */}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
         
         {/* Add script to immediately apply dark mode to tables on load */}
         <script dangerouslySetInnerHTML={{ __html: `

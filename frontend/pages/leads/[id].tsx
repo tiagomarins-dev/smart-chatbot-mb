@@ -8,6 +8,7 @@ import leadsApi from '../../src/api/leads';
 import { useRealtime } from '../../src/contexts/RealtimeContext';
 import Link from 'next/link';
 import LeadEventTimeline from '../../src/components/leads/LeadEventTimeline';
+import LeadWhatsAppChat from '../../src/components/leads/LeadWhatsAppChat';
 
 const LeadDetailPage: NextPage = () => {
   const router = useRouter();
@@ -250,66 +251,65 @@ const LeadDetailPage: NextPage = () => {
 
         <div className="row mb-4">
           {/* Lead Information Card */}
-          <div className="col-md-7 mb-4 mb-md-0">
+          <div className="col-lg-4 mb-4 mb-lg-0">
             <div className="card h-100">
               <div className="card-header d-flex align-items-center">
                 <i className="bi bi-info-circle me-2" style={{ color: '#7e57c2' }}></i>
                 <h5 className="mb-0">Informações do Lead</h5>
               </div>
               <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6 mb-4 mb-md-0">
-                    <h6 className="fw-semibold mb-3" style={{ color: '#7e57c2' }}>Detalhes de Contato</h6>
-                    <div className="mb-3">
-                      <div className="mb-1 text-muted small">Nome Completo</div>
-                      <div className="fw-medium">{lead.name}</div>
-                    </div>
-                    <div className="mb-3">
-                      <div className="mb-1 text-muted small">Email</div>
-                      <div className="fw-medium">
-                        <a href={`mailto:${lead.email}`} className="text-decoration-none d-flex align-items-center">
-                          <i className="bi bi-envelope me-2 text-muted"></i>
-                          {lead.email}
-                        </a>
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <div className="mb-1 text-muted small">Telefone</div>
-                      <div className="fw-medium">
-                        <a href={`tel:${lead.phone}`} className="text-decoration-none d-flex align-items-center">
-                          <i className="bi bi-telephone me-2 text-muted"></i>
-                          {lead.phone}
-                        </a>
-                      </div>
+                <div>
+                  <h6 className="fw-semibold mb-3" style={{ color: '#7e57c2' }}>Detalhes de Contato</h6>
+                  <div className="mb-3">
+                    <div className="mb-1 text-muted small">Nome Completo</div>
+                    <div className="fw-medium">{lead.name}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="mb-1 text-muted small">Email</div>
+                    <div className="fw-medium">
+                      <a href={`mailto:${lead.email}`} className="text-decoration-none d-flex align-items-center">
+                        <i className="bi bi-envelope me-2 text-muted"></i>
+                        {lead.email}
+                      </a>
                     </div>
                   </div>
-                  <div className="col-md-6">
-                    <h6 className="fw-semibold mb-3" style={{ color: '#7e57c2' }}>Detalhes do Lead</h6>
-                    <div className="mb-3">
-                      <div className="mb-1 text-muted small">Status</div>
-                      <div className="fw-medium">
-                        <span className={`badge ${getStatusBadgeColor(lead.status)}`}>
-                          {getStatusDisplayName(lead.status)}
-                        </span>
-                      </div>
+                  <div className="mb-3">
+                    <div className="mb-1 text-muted small">Telefone</div>
+                    <div className="fw-medium">
+                      <a href={`tel:${lead.phone}`} className="text-decoration-none d-flex align-items-center">
+                        <i className="bi bi-telephone me-2 text-muted"></i>
+                        {lead.phone}
+                      </a>
                     </div>
-                    <div className="mb-3">
-                      <div className="mb-1 text-muted small">Criado em</div>
-                      <div className="fw-medium d-flex align-items-center">
-                        <i className="bi bi-calendar2 me-2 text-muted"></i>
-                        {lead.created_at
-                          ? new Date(lead.created_at).toLocaleString('pt-BR')
-                          : 'N/A'}
-                      </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <h6 className="fw-semibold mb-3" style={{ color: '#7e57c2' }}>Detalhes do Lead</h6>
+                  <div className="mb-3">
+                    <div className="mb-1 text-muted small">Status</div>
+                    <div className="fw-medium">
+                      <span className={`badge ${getStatusBadgeColor(lead.status)}`}>
+                        {getStatusDisplayName(lead.status)}
+                      </span>
                     </div>
-                    <div className="mb-3">
-                      <div className="mb-1 text-muted small">Última Atualização</div>
-                      <div className="fw-medium d-flex align-items-center">
-                        <i className="bi bi-clock-history me-2 text-muted"></i>
-                        {lead.updated_at
-                          ? new Date(lead.updated_at).toLocaleString('pt-BR')
-                          : 'N/A'}
-                      </div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="mb-1 text-muted small">Criado em</div>
+                    <div className="fw-medium d-flex align-items-center">
+                      <i className="bi bi-calendar2 me-2 text-muted"></i>
+                      {lead.created_at
+                        ? new Date(lead.created_at).toLocaleString('pt-BR')
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="mb-1 text-muted small">Última Atualização</div>
+                    <div className="fw-medium d-flex align-items-center">
+                      <i className="bi bi-clock-history me-2 text-muted"></i>
+                      {lead.updated_at
+                        ? new Date(lead.updated_at).toLocaleString('pt-BR')
+                        : 'N/A'}
                     </div>
                   </div>
                 </div>
@@ -326,9 +326,14 @@ const LeadDetailPage: NextPage = () => {
               </div>
             </div>
           </div>
+          
+          {/* WhatsApp Chat Card */}
+          <div className="col-lg-5 mb-4 mb-lg-0">
+            <LeadWhatsAppChat lead={lead} isConnected={isConnected} />
+          </div>
 
-          {/* Quick Actions Card */}
-          <div className="col-md-5">
+          {/* Quick Actions and Stats Card */}
+          <div className="col-lg-3">
             <div className="card mb-4">
               <div className="card-header d-flex align-items-center">
                 <i className="bi bi-lightning me-2" style={{ color: '#7e57c2' }}></i>
@@ -344,10 +349,10 @@ const LeadDetailPage: NextPage = () => {
                     <i className="bi bi-telephone me-2"></i>
                     Ligar para Lead
                   </a>
-                  <button className="btn btn-outline-warning d-flex align-items-center justify-content-center">
+                  <a href="/whatsapp" className="btn btn-outline-success d-flex align-items-center justify-content-center">
                     <i className="bi bi-whatsapp me-2"></i>
-                    Enviar Mensagem WhatsApp
-                  </button>
+                    Abrir WhatsApp
+                  </a>
                 </div>
               </div>
             </div>
@@ -356,7 +361,7 @@ const LeadDetailPage: NextPage = () => {
             <div className="card">
               <div className="card-header d-flex align-items-center">
                 <i className="bi bi-graph-up me-2" style={{ color: '#7e57c2' }}></i>
-                <h5 className="mb-0">Estatísticas do Lead</h5>
+                <h5 className="mb-0">Estatísticas</h5>
               </div>
               <div className="card-body">
                 <div className="d-flex flex-column gap-3">
@@ -365,7 +370,7 @@ const LeadDetailPage: NextPage = () => {
                       <div className="p-2 rounded-circle" style={{ backgroundColor: 'rgba(66, 165, 245, 0.1)' }}>
                         <i className="bi bi-eye" style={{ color: '#42a5f5' }}></i>
                       </div>
-                      <span>Visualizações de Página</span>
+                      <span>Visualizações</span>
                     </div>
                     <span className="badge bg-info rounded-pill">
                       {leadEvents.filter(e => e.event_type === 'page_view').length}
@@ -376,7 +381,7 @@ const LeadDetailPage: NextPage = () => {
                       <div className="p-2 rounded-circle" style={{ backgroundColor: 'rgba(102, 187, 106, 0.1)' }}>
                         <i className="bi bi-whatsapp" style={{ color: '#66bb6a' }}></i>
                       </div>
-                      <span>Mensagens WhatsApp</span>
+                      <span>WhatsApp</span>
                     </div>
                     <span className="badge bg-success rounded-pill">
                       {leadEvents.filter(e => e.event_type === 'whatsapp_message').length}
@@ -387,7 +392,7 @@ const LeadDetailPage: NextPage = () => {
                       <div className="p-2 rounded-circle" style={{ backgroundColor: 'rgba(255, 183, 77, 0.1)' }}>
                         <i className="bi bi-envelope" style={{ color: '#ffb74d' }}></i>
                       </div>
-                      <span>Interações por Email</span>
+                      <span>Emails</span>
                     </div>
                     <span className="badge bg-warning rounded-pill">
                       {leadEvents.filter(e => e.event_type.includes('email')).length}
@@ -398,7 +403,7 @@ const LeadDetailPage: NextPage = () => {
                       <div className="p-2 rounded-circle" style={{ backgroundColor: 'rgba(239, 83, 80, 0.1)' }}>
                         <i className="bi bi-telephone" style={{ color: '#ef5350' }}></i>
                       </div>
-                      <span>Chamadas Telefônicas</span>
+                      <span>Chamadas</span>
                     </div>
                     <span className="badge bg-danger rounded-pill">
                       {leadEvents.filter(e => e.event_type === 'call').length}

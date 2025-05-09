@@ -38,11 +38,25 @@ interface ContactMessagesResponse {
   messages: Message[];
 }
 
-// Helper para obter a URL base da API WhatsApp
+// API WhatsApp - precisamos apontar consistentemente para a porta 9029 
 const getApiBaseUrl = (): string => {
-  // Simplifique para apontar diretamente para o backend
-  return 'http://localhost:9032/api/whatsapp';
+  // Em container Docker
+  if (process.env.NEXT_PUBLIC_USE_DOCKER === 'true') {
+    return 'http://whatsapp-api:3000/api/whatsapp';
+  }
+  // Em desenvolvimento local fora de container
+  return 'http://localhost:9029/api/whatsapp';
 };
+
+interface PhoneResponse {
+  success: boolean;
+  phoneNumber: string;
+}
+
+interface MockAuthResponse {
+  success: boolean;
+  message: string;
+}
 
 export const whatsappApi = {
   /**
@@ -51,14 +65,49 @@ export const whatsappApi = {
   getStatus: async (): Promise<ApiResponse<WhatsAppStatus>> => {
     try {
       const apiUrl = getApiBaseUrl();
+      console.log(`Fetching WhatsApp status from: ${apiUrl}/status`);
       const response = await fetch(`${apiUrl}/status`);
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Status API raw response:', responseText);
+      
+      let json;
+      try {
+        json = JSON.parse(responseText);
+        console.log('Parsed WhatsApp status response:', json);
+      } catch (parseError) {
+        console.error('Error parsing WhatsApp status response:', parseError);
+        return {
+          success: false,
+          error: 'Erro ao processar resposta do status do WhatsApp',
+          statusCode: response.status
+        };
+      }
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          error: json.error || 'Erro ao buscar status do WhatsApp',
+          statusCode: response.status
+        };
+      }
+      
+      // Extrair dados da resposta seguindo a estrutura do backend
+      const statusData: WhatsAppStatus = {
+        status: json.data?.status || 'disconnected',
+        authenticated: json.data?.authenticated || false,
+        phoneNumber: json.data?.phoneNumber || null,
+        timestamp: json.data?.timestamp || new Date().toISOString()
+      };
+      
+      console.log('Extracted WhatsApp status data:', statusData);
+      
       return {
         success: true,
-        data,
-        statusCode: 200
+        data: statusData,
+        statusCode: json.statusCode || 200
       };
     } catch (error) {
+      console.error('Error fetching WhatsApp status:', error);
       return {
         success: false,
         error: 'Erro ao buscar status do WhatsApp',
@@ -75,19 +124,18 @@ export const whatsappApi = {
       const apiUrl = getApiBaseUrl();
       const response = await fetch(`${apiUrl}/qrcode`);
       
+      const json = await response.json();
       if (!response.ok) {
         return {
           success: false,
-          error: 'QR Code não disponível',
+          error: json.error || 'QR Code não disponível',
           statusCode: response.status
         };
       }
-      
-      const data = await response.json();
       return {
         success: true,
-        data,
-        statusCode: 200
+        data: json.data as QRCodeResponse,
+        statusCode: json.statusCode
       };
     } catch (error) {
       return {
@@ -111,20 +159,18 @@ export const whatsappApi = {
         }
       });
       
-      const data = await response.json();
-      
+      const json = await response.json();
       if (!response.ok) {
         return {
           success: false,
-          error: data.error || 'Erro ao conectar WhatsApp',
+          error: json.error || 'Erro ao conectar WhatsApp',
           statusCode: response.status
         };
       }
-      
       return {
         success: true,
-        data,
-        statusCode: 200
+        data: json.data as ConnectResponse,
+        statusCode: json.statusCode
       };
     } catch (error) {
       return {
@@ -148,20 +194,18 @@ export const whatsappApi = {
         }
       });
       
-      const data = await response.json();
-      
+      const json = await response.json();
       if (!response.ok) {
         return {
           success: false,
-          error: data.error || 'Erro ao desconectar WhatsApp',
+          error: json.error || 'Erro ao desconectar WhatsApp',
           statusCode: response.status
         };
       }
-      
       return {
         success: true,
-        data,
-        statusCode: 200
+        data: json.data as { status: string },
+        statusCode: json.statusCode
       };
     } catch (error) {
       return {
@@ -175,36 +219,71 @@ export const whatsappApi = {
   /**
    * Send WhatsApp message
    */
-  sendMessage: async (number: string, message: string): Promise<ApiResponse<SendMessageResponse>> => {
+  sendMessage: async (number: string, message: string, lead_id?: string): Promise<ApiResponse<SendMessageResponse>> => {
     try {
+      console.log('Sending WhatsApp message:', { number, messageLength: message.length, lead_id });
+      
       const apiUrl = getApiBaseUrl();
+      console.log('Using API URL:', apiUrl);
+      
+      const payload = { 
+        phoneNumber: number, 
+        message,
+        lead_id // Include lead_id if available
+      };
+      
+      console.log('Message payload (truncated):', {
+        ...payload,
+        message: message.length > 50 ? message.substring(0, 50) + '...' : message
+      });
+      
+      console.log('Sending POST request to:', `${apiUrl}/send`);
       const response = await fetch(`${apiUrl}/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ number, message })
+        body: JSON.stringify(payload)
       });
       
-      const data = await response.json();
+      console.log('Response status:', response.status);
       
-      if (!response.ok) {
+      // Get response data
+      let data;
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      try {
+        data = JSON.parse(responseText);
+        console.log('Parsed response data:', data);
+      } catch (parseError) {
+        console.error('Error parsing response JSON:', parseError);
         return {
           success: false,
-          error: data.error || 'Erro ao enviar mensagem',
+          error: `Invalid JSON response: ${responseText.substring(0, 100)}`,
+          statusCode: response.status
+        };
+      }
+      
+      if (!response.ok) {
+        console.error('Request failed:', data);
+        return {
+          success: false,
+          error: data.error || `Erro ao enviar mensagem (${response.status})`,
           statusCode: response.status
         };
       }
       
       return {
         success: true,
-        data,
-        statusCode: 200
+        data: data.data || data, // Handle both formats
+        statusCode: response.status
       };
     } catch (error) {
+      console.error('Exception in sendMessage:', error);
       return {
         success: false,
-        error: 'Erro ao enviar mensagem',
+        error: error instanceof Error ? `Erro: ${error.message}` : 'Erro ao enviar mensagem',
         statusCode: 500
       };
     }
@@ -300,6 +379,104 @@ export const whatsappApi = {
       return {
         success: false,
         error: 'Erro ao limpar mensagens',
+        statusCode: 500
+      };
+    }
+  },
+
+  /**
+   * Get QR code in plain text format
+   */
+  getQRCodePlain: async (): Promise<ApiResponse<string>> => {
+    try {
+      const apiUrl = getApiBaseUrl();
+      const response = await fetch(`${apiUrl}/qrcode/plain`);
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          error: 'QR Code não disponível em formato de texto',
+          statusCode: response.status
+        };
+      }
+      
+      const text = await response.text();
+      return {
+        success: true,
+        data: text,
+        statusCode: 200
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erro ao buscar QR code em texto',
+        statusCode: 500
+      };
+    }
+  },
+
+  /**
+   * Get connected phone number
+   */
+  getPhone: async (): Promise<ApiResponse<PhoneResponse>> => {
+    try {
+      const apiUrl = getApiBaseUrl();
+      const response = await fetch(`${apiUrl}/phone`);
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          error: 'Telefone não disponível ou desconectado',
+          statusCode: response.status
+        };
+      }
+      
+      const data = await response.json();
+      return {
+        success: true,
+        data: data.data,
+        statusCode: 200
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erro ao buscar telefone',
+        statusCode: 500
+      };
+    }
+  },
+
+  /**
+   * Mock authenticate (for testing without scanning QR)
+   */
+  mockAuthenticate: async (): Promise<ApiResponse<MockAuthResponse>> => {
+    try {
+      const apiUrl = getApiBaseUrl();
+      const response = await fetch(`${apiUrl}/mock/authenticate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          error: 'Erro ao simular autenticação',
+          statusCode: response.status
+        };
+      }
+      
+      const data = await response.json();
+      return {
+        success: true,
+        data: data.data,
+        statusCode: 200
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Erro ao simular autenticação',
         statusCode: 500
       };
     }
