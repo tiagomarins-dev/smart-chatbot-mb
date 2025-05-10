@@ -263,6 +263,34 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
     }
   };
 
+  // Helper function to get sentiment badge color
+  const getSentimentBadgeColor = (status?: string) => {
+    switch (status) {
+      case 'interessado': return 'bg-success';
+      case 'compra futura': return 'bg-primary';
+      case 'achou caro': return 'bg-warning';
+      case 'quer desconto': return 'bg-warning';
+      case 'parcelamento': return 'bg-info';
+      case 'sem interesse': return 'bg-danger';
+      case 'indeterminado': return 'bg-secondary';
+      default: return 'bg-light text-muted';
+    }
+  };
+
+  // Helper function to get sentiment display name
+  const getSentimentDisplayName = (status?: string) => {
+    switch (status) {
+      case 'interessado': return 'Interessado';
+      case 'compra futura': return 'Compra Futura';
+      case 'achou caro': return 'Achou Caro';
+      case 'quer desconto': return 'Quer Desconto';
+      case 'parcelamento': return 'Parcelamento';
+      case 'sem interesse': return 'Sem Interesse';
+      case 'indeterminado': return 'Indeterminado';
+      default: return 'Não analisado';
+    }
+  };
+
   return (
     <div className="card" style={{ 
       borderRadius: '12px', 
@@ -333,6 +361,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
                 <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>E-mail</th>
                 <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Telefone</th>
                 <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Status</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Sentimento</th>
+                <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Score</th>
                 <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161' }}>Criado em</th>
                 <th style={{ padding: '0.7rem 1.25rem', fontWeight: '600', color: '#616161', textAlign: 'right' }}>Ações</th>
               </tr>
@@ -361,12 +391,12 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
                   <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>{lead.phone}</td>
                   <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
                     <div className="dropdown">
-                      <span 
+                      <span
                         className="badge dropdown-toggle"
                         role="button"
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
-                        style={{ 
+                        style={{
                           backgroundColor: getStatusBadgeColor(lead.status),
                           padding: '0.4em 0.7em',
                           fontWeight: 500,
@@ -375,45 +405,95 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
                       >
                         {getStatusDisplayName(lead.status)}
                       </span>
-                      <ul className="dropdown-menu" style={{ 
+                      <ul className="dropdown-menu" style={{
                         borderRadius: '8px',
                         boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)',
                         border: 'none',
                         padding: '0.5rem'
                       }}>
-                        <li><button 
-                          className="dropdown-item" 
+                        <li><button
+                          className="dropdown-item"
                           onClick={() => lead.id && handleStatusUpdate(lead.id, 'novo')}
                           style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
                         >Novo</button></li>
-                        <li><button 
-                          className="dropdown-item" 
+                        <li><button
+                          className="dropdown-item"
                           onClick={() => lead.id && handleStatusUpdate(lead.id, 'qualificado')}
                           style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
                         >Qualificado</button></li>
-                        <li><button 
-                          className="dropdown-item" 
+                        <li><button
+                          className="dropdown-item"
                           onClick={() => lead.id && handleStatusUpdate(lead.id, 'contatado')}
                           style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
                         >Contatado</button></li>
-                        <li><button 
-                          className="dropdown-item" 
+                        <li><button
+                          className="dropdown-item"
                           onClick={() => lead.id && handleStatusUpdate(lead.id, 'convertido')}
                           style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
                         >Convertido</button></li>
                         <li><hr className="dropdown-divider" /></li>
-                        <li><button 
-                          className="dropdown-item text-danger" 
+                        <li><button
+                          className="dropdown-item text-danger"
                           onClick={() => lead.id && handleStatusUpdate(lead.id, 'desistiu')}
                           style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
                         >Desistiu</button></li>
-                        <li><button 
-                          className="dropdown-item text-secondary" 
+                        <li><button
+                          className="dropdown-item text-secondary"
                           onClick={() => lead.id && handleStatusUpdate(lead.id, 'inativo')}
                           style={{ borderRadius: '6px', padding: '0.5rem 1rem' }}
                         >Inativo</button></li>
                       </ul>
                     </div>
+                  </td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
+                    {lead.sentiment_status ? (
+                      <span
+                        className="badge"
+                        style={{
+                          backgroundColor: getSentimentBadgeColor(lead.sentiment_status),
+                          padding: '0.4em 0.7em',
+                          fontWeight: 500,
+                          borderRadius: '6px',
+                          cursor: 'default'
+                        }}
+                      >
+                        {getSentimentDisplayName(lead.sentiment_status)}
+                      </span>
+                    ) : (
+                      <span className="text-muted small">—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
+                    {lead.lead_score ? (
+                      <div
+                        className="progress"
+                        style={{
+                          height: '8px',
+                          width: '100%',
+                          maxWidth: '80px',
+                          backgroundColor: '#e0e0e0'
+                        }}
+                      >
+                        <div
+                          className="progress-bar"
+                          role="progressbar"
+                          style={{
+                            width: `${lead.lead_score}%`,
+                            backgroundColor: lead.lead_score >= 80 ? '#4caf50' :
+                                            lead.lead_score >= 60 ? '#2196f3' :
+                                            lead.lead_score >= 40 ? '#ff9800' : '#f44336'
+                          }}
+                          aria-valuenow={lead.lead_score}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          data-bs-toggle="tooltip"
+                          data-bs-placement="top"
+                          title={`Score: ${lead.lead_score}/100`}
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-muted small">—</span>
+                    )}
                   </td>
                   <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
                     {lead.created_at

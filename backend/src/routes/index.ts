@@ -8,6 +8,7 @@ import apiKeysRoutes from './apiKeysRoutes';
 import whatsappRoutes from './whatsappRoutes';
 import leadEventsRoutes from './leadEventsRoutes';
 import eventCaptureRoutes from './eventCaptureRoutes';
+import whatsappConversationsRoutes from './whatsappConversationsRoutes';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/lead-events', leadEventsRoutes);
 router.use('/projects', projectsRoutes);
 router.use('/api-keys', apiKeysRoutes);
 router.use('/whatsapp', whatsappRoutes);
+router.use('/whatsapp-conversations', whatsappConversationsRoutes);
 router.use('/events', eventCaptureRoutes);
 
 export default router;

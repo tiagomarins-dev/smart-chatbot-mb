@@ -4,3 +4,4 @@ export * from './Contact';
 export * from './Lead';
 export * from './Project';
 export * from './ApiKey';
+export * from './WhatsAppConversation';

@@ -459,7 +459,7 @@ export async function getLeadStats(req: Request, res: Response): Promise<void> {
     const projectId = req.query.project_id as string;
     const periodDays = parseInt(req.query.period as string) || 30;
 
-    // Initialize stats object
+    // Initialize stats object with default empty objects
     const stats: LeadStats = {
       total_leads: 0,
       new_leads_period: 0,
@@ -503,21 +503,23 @@ export async function getLeadStats(req: Request, res: Response): Promise<void> {
       .select('status')
       .eq('user_id', userId);
 
+    // Initialize all possible statuses with zero count
+    const validStatuses: LeadStatus[] = ['novo', 'qualificado', 'contatado', 'convertido', 'desistiu', 'inativo'];
+    validStatuses.forEach(status => {
+      stats.leads_by_status[status] = 0;
+    });
+
     if (statusError) {
       console.error('Error fetching lead status data:', statusError);
-      // Continue execution - this is a non-critical part of the statistics
+      // Continue execution with initialized zero counts for all statuses
     } else if (statusData) {
       // Count leads by status manually
-      const statusCounts: Record<string, number> = {};
-      
       statusData.forEach(item => {
         const status = item.status || 'unknown';
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
-      });
-      
-      // Convert to the expected format
-      Object.entries(statusCounts).forEach(([status, count]) => {
-        stats.leads_by_status[status as LeadStatus] = count;
+        // Only count valid statuses
+        if (validStatuses.includes(status as LeadStatus)) {
+          stats.leads_by_status[status as LeadStatus] = (stats.leads_by_status[status as LeadStatus] || 0) + 1;
+        }
       });
     }
 
@@ -529,21 +531,20 @@ export async function getLeadStats(req: Request, res: Response): Promise<void> {
         .select('utm_source')
         .eq('project_id', projectId);
 
+      // Initialize with direct or unknown source set to 0
+      stats.leads_by_source = {
+        'direct': 0,
+        'unknown': 0
+      };
+
       if (sourceError) {
         console.error('Error fetching UTM source data:', sourceError);
-        // Continue execution - this is a non-critical part of the statistics
+        // Continue execution with default sources
       } else if (sourceData) {
         // Count UTM sources manually
-        const sourceCounts: Record<string, number> = {};
-        
         sourceData.forEach(item => {
           const source = item.utm_source || 'unknown';
-          sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-        });
-        
-        // Convert to the expected format
-        Object.entries(sourceCounts).forEach(([source, count]) => {
-          stats.leads_by_source[source] = count;
+          stats.leads_by_source[source] = (stats.leads_by_source[source] || 0) + 1;
         });
       }
 

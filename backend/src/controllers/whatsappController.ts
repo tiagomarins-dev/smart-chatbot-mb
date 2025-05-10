@@ -3,6 +3,7 @@ import { sendError, sendSuccess } from '../utils/responseUtils';
 import { HttpStatus } from '../utils/responseUtils';
 import { createLeadEvent } from '../services/leadEventsService';
 import { executeQuery } from '../utils/dbUtils';
+import { chatbotService } from '../services/chatbot';
 import axios from 'axios';
 
 // URL base para a API WhatsApp
@@ -305,9 +306,10 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
         messageId = `msg-simulated-${Date.now()}`;
       }
       
-      // Se tivermos um lead_id, registrar o evento
+      // Se tivermos um lead_id, registrar o evento e salvar na tabela de conversas
       if (lead_id) {
         try {
+          // 1. Registrar evento na tabela lead_events (manter compatibilidade)
           await createLeadEvent(
             lead_id,
             'whatsapp_message',
@@ -321,6 +323,41 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
             'whatsapp'
           );
           console.log(`Recorded outgoing WhatsApp message event for lead ${lead_id}`);
+
+          // 2. Salvar na tabela de conversas para análise de IA
+          try {
+            // Import aqui para evitar import circular
+            const { createWhatsAppConversation, calculateResponseTime } = require('../services/whatsappConversationsService');
+
+            const conversationData = {
+              lead_id,
+              message_id: messageId,
+              phone_number: cleanNumber,
+              direction: 'outgoing',
+              content: message,
+              media_type: 'text',
+              message_status: success ? 'sent' : 'error',
+              message_timestamp: new Date().toISOString()
+            };
+
+            const savedConversation = await createWhatsAppConversation(conversationData);
+            console.log('Mensagem salva na tabela de conversas:', savedConversation?.id);
+
+            // Calcular e atualizar o tempo de resposta
+            if (savedConversation) {
+              const responseTime = await calculateResponseTime(
+                lead_id,
+                messageId,
+                new Date().toISOString()
+              );
+
+              if (responseTime) {
+                console.log(`Tempo de resposta calculado: ${responseTime} segundos`);
+              }
+            }
+          } catch (conversationError) {
+            console.error('Erro ao salvar na tabela de conversas:', conversationError);
+          }
         } catch (eventError) {
           console.error('Error recording lead event:', eventError);
         }
@@ -328,18 +365,20 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
         // Se não tivermos um lead_id, tentar encontrar com base no número de telefone
         try {
           const query = `
-            SELECT id FROM leads 
+            SELECT id FROM leads
             WHERE phone LIKE $1 OR phone LIKE $2 OR phone LIKE $3
           `;
-          
+
           const result = await executeQuery(query, [
-            `%${cleanNumber}%`, 
+            `%${cleanNumber}%`,
             `%${cleanNumber.substring(cleanNumber.length - 8)}%`,
             `%${cleanNumber.substring(cleanNumber.length - 9)}%`
           ]);
-          
+
           if (result && result.length > 0) {
             const foundLeadId = result[0].id;
+
+            // 1. Registrar evento na tabela lead_events
             await createLeadEvent(
               foundLeadId,
               'whatsapp_message',
@@ -353,6 +392,41 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
               'whatsapp'
             );
             console.log(`Found and recorded outgoing WhatsApp message event for lead ${foundLeadId}`);
+
+            // 2. Salvar na tabela de conversas para análise de IA
+            try {
+              // Import aqui para evitar import circular
+              const { createWhatsAppConversation, calculateResponseTime } = require('../services/whatsappConversationsService');
+
+              const conversationData = {
+                lead_id: foundLeadId,
+                message_id: messageId,
+                phone_number: cleanNumber,
+                direction: 'outgoing',
+                content: message,
+                media_type: 'text',
+                message_status: success ? 'sent' : 'error',
+                message_timestamp: new Date().toISOString()
+              };
+
+              const savedConversation = await createWhatsAppConversation(conversationData);
+              console.log('Mensagem salva na tabela de conversas:', savedConversation?.id);
+
+              // Calcular e atualizar o tempo de resposta
+              if (savedConversation) {
+                const responseTime = await calculateResponseTime(
+                  foundLeadId,
+                  messageId,
+                  new Date().toISOString()
+                );
+
+                if (responseTime) {
+                  console.log(`Tempo de resposta calculado: ${responseTime} segundos`);
+                }
+              }
+            } catch (conversationError) {
+              console.error('Erro ao salvar na tabela de conversas:', conversationError);
+            }
           }
         } catch (findError) {
           console.error('Error finding lead by phone number:', findError);
@@ -536,8 +610,12 @@ export async function webhookHandler(req: Request, res: Response): Promise<void>
  */
 async function processWebhookEvent(eventData: any): Promise<void> {
   try {
-    const { type, data } = eventData;
-    
+    const { type, data, timestamp } = eventData;
+
+    // Log detalhes do webhook para diagnóstico
+    console.log(`Processando webhook: tipo=${type}, timestamp=${timestamp || 'não informado'}`);
+    console.log('Dados do webhook:', JSON.stringify(data || {}).substring(0, 200) + '...');
+
     switch (type) {
       case 'message':
         await processMessageEvent(data);
@@ -558,52 +636,288 @@ async function processWebhookEvent(eventData: any): Promise<void> {
 }
 
 /**
- * Process a message event and record it to the lead_events table
+ * Process a message event and record it to the lead_events and whatsapp_conversations tables
  */
 async function processMessageEvent(data: any): Promise<void> {
   try {
-    if (!data || !data.from) {
-      console.error('Invalid message data, missing required fields');
+    // Validação dos dados da mensagem
+    if (!data) {
+      console.error('Invalid message data: data is null or undefined');
       return;
     }
-    
-    // Extract phone number (remove the @c.us suffix if present)
-    const phoneNumber = data.from.replace('@c.us', '');
-    
-    // Try to find a lead with this phone number
+
+    // Log para diagnóstico
+    console.log('Processing message event:', {
+      id: data.id,
+      from: data.from,
+      to: data.to,
+      fromMe: data.fromMe,
+      source: data.source,
+      body: data.body ? (data.body.length > 50 ? data.body.substring(0, 50) + '...' : data.body) : null
+    });
+
+    // Determinar direção da mensagem e números de telefone corretos
+    const isOutgoing = data.fromMe === true;
+
+    // Para mensagens enviadas, o número do lead é o destinatário (to)
+    // Para mensagens recebidas, o número do lead é o remetente (from)
+    const phoneNumberRaw = isOutgoing ? data.to : data.from;
+
+    if (!phoneNumberRaw) {
+      console.error('Missing phone number in message data');
+      console.log('Message data dump:', JSON.stringify(data));
+      return;
+    }
+
+    // Limpar o número de telefone
+    const phoneNumber = phoneNumberRaw.replace('@c.us', '').replace(/\D/g, '');
+    console.log(`Número de telefone extraído: ${phoneNumber} (${isOutgoing ? 'enviada para' : 'recebida de'})`);
+
+    // Verificar se o lead_id foi fornecido diretamente no webhook (implementação nova)
+    if (data.lead_id) {
+      console.log(`ID do lead fornecido diretamente no webhook: ${data.lead_id}`);
+      await processMessageForLead(data.lead_id, data, phoneNumber, isOutgoing);
+      return;
+    }
+
+    // Caso contrário, tentar encontrar o lead pelo número de telefone
+    console.log(`Buscando lead pelo número de telefone: ${phoneNumber}`);
     const query = `
-      SELECT id FROM leads 
-      WHERE phone LIKE $1 OR phone LIKE $2 OR phone LIKE $3
+      SELECT id FROM leads
+      WHERE phone LIKE $1 OR phone LIKE $2 OR phone LIKE $3 OR phone LIKE $4
     `;
-    
+
     // Try different phone number formats
     const result = await executeQuery(query, [
-      `%${phoneNumber}%`, 
+      `%${phoneNumber}%`,
       `%${phoneNumber.substring(phoneNumber.length - 8)}%`,
-      `%${phoneNumber.substring(phoneNumber.length - 9)}%`
+      `%${phoneNumber.substring(phoneNumber.length - 9)}%`,
+      `%${phoneNumber.substring(phoneNumber.length - 11)}%` // Formato completo BR: 5521987654321
     ]);
-    
+
     if (result && result.length > 0) {
       const leadId = result[0].id;
-      
-      // Create a lead event record
-      await createLeadEvent(
-        leadId,
-        'whatsapp_message',
-        {
-          direction: data.fromMe ? 'outgoing' : 'incoming',
-          message: data.body || '',
-          messageId: data.id || '',
-          timestamp: data.timestamp || new Date().toISOString()
-        },
-        'whatsapp'
-      );
-      
-      console.log(`Recorded WhatsApp message event for lead ${leadId}`);
+      console.log(`Lead encontrado: ${leadId}`);
+
+      await processMessageForLead(leadId, data, phoneNumber, isOutgoing);
     } else {
-      console.log(`No lead found with phone number matching ${phoneNumber}`);
+      console.log(`Nenhum lead encontrado para o número ${phoneNumber}`);
+
+      // Opção: Salvar mensagens sem lead em tabela separada ou log
+      console.log('Mensagem não associada a lead (não será salva no banco):', {
+        direction: isOutgoing ? 'outgoing' : 'incoming',
+        phone: phoneNumber,
+        message: data.body,
+        timestamp: data.timestamp || new Date().toISOString()
+      });
     }
   } catch (error) {
     console.error('Error processing message event:', error);
+  }
+}
+
+/**
+ * Process a message for a specific lead
+ */
+async function processMessageForLead(leadId: string, data: any, phoneNumber: string, isOutgoing: boolean): Promise<void> {
+  try {
+    // 1. Create a lead event record (manter compatibilidade)
+    await createLeadEvent(
+      leadId,
+      'whatsapp_message',
+      {
+        direction: isOutgoing ? 'outgoing' : 'incoming',
+        message: data.body || '',
+        messageId: data.id || '',
+        timestamp: data.timestamp || new Date().toISOString(),
+        source: data.source || 'webhook' // Registrar origem da mensagem
+      },
+      'whatsapp'
+    );
+
+    console.log(`Registrado evento WhatsApp para lead ${leadId} (${isOutgoing ? 'enviada' : 'recebida'})`);
+
+    // 2. Salvar na tabela de conversas para análise de IA
+    try {
+      // Import aqui para evitar import circular
+      const { createWhatsAppConversation, updateWhatsAppConversationAnalysis } = require('../services/whatsappConversationsService');
+
+      const messageTimestamp = data.timestamp
+        ? new Date(data.timestamp).toISOString()
+        : new Date().toISOString();
+
+      const conversationData = {
+        lead_id: leadId,
+        message_id: data.id || `msg-webhook-${Date.now()}`,
+        phone_number: phoneNumber,
+        direction: isOutgoing ? 'outgoing' : 'incoming',
+        content: data.body || '',
+        media_type: data.hasMedia ? (data.type || 'media') : 'text',
+        message_status: data.ack || 'received',
+        message_timestamp: messageTimestamp
+      };
+
+      const savedConversation = await createWhatsAppConversation(conversationData);
+
+      if (savedConversation) {
+        console.log(`Mensagem salva na tabela de conversas: ${savedConversation.id}`);
+
+        // 3. Processar com chatbot se for uma mensagem recebida (não enviada por nós)
+        if (!isOutgoing && savedConversation.id && data.body) {
+          try {
+            console.log(`Processando mensagem com chatbot para lead ${leadId}`);
+            const chatbotResult = await chatbotService.processMessage(data.body, leadId);
+
+            // Salvar análise da mensagem
+            if (savedConversation.id) {
+              await updateWhatsAppConversationAnalysis(savedConversation.id, {
+                intent: chatbotResult.analysis.category,
+                entities: chatbotResult.analysis.entities
+              });
+              console.log(`Análise de chatbot salva para mensagem ${savedConversation.id}`);
+            }
+
+            // Se o chatbot determinou que deve responder automaticamente
+            if (chatbotResult.shouldRespond && chatbotResult.message) {
+              console.log(`Enviando resposta automática: ${chatbotResult.message.substring(0, 50)}...`);
+
+              // Preparar dados para envio da resposta
+              const autoResponseData = {
+                phoneNumber,
+                message: chatbotResult.message,
+                lead_id: leadId,
+                automated: true
+              };
+
+              // Chamar a função sendMessage para enviar a resposta automática
+              await sendAutoResponse(autoResponseData);
+              console.log('Resposta automática enviada com sucesso');
+            }
+          } catch (chatbotError) {
+            console.error('Erro ao processar mensagem com chatbot:', chatbotError);
+          }
+        }
+
+        // Calcular tempo de resposta para mensagens enviadas
+        if (isOutgoing) {
+          try {
+            const { calculateResponseTime } = require('../services/whatsappConversationsService');
+            const responseTime = await calculateResponseTime(
+              leadId,
+              data.id || `msg-webhook-${Date.now()}`,
+              messageTimestamp
+            );
+
+            if (responseTime) {
+              console.log(`Tempo de resposta calculado: ${responseTime} segundos`);
+            }
+          } catch (responseTimeError) {
+            console.error('Erro ao calcular tempo de resposta:', responseTimeError);
+          }
+        }
+      }
+    } catch (conversationError) {
+      console.error('Erro ao salvar na tabela de conversas:', conversationError);
+    }
+  } catch (error) {
+    console.error(`Erro ao processar mensagem para lead ${leadId}:`, error);
+  }
+}
+
+/**
+ * Send automatic response from chatbot
+ */
+async function sendAutoResponse(data: {
+  phoneNumber: string,
+  message: string,
+  lead_id: string,
+  automated: boolean
+}): Promise<void> {
+  try {
+    // Formatar número de telefone
+    const cleanNumber = data.phoneNumber.replace('@c.us', '').replace(/\D/g, '');
+
+    console.log(`Enviando resposta automática do chatbot para ${cleanNumber}`);
+
+    // Criar objeto de dados
+    const messageData = {
+      phoneNumber: cleanNumber,
+      message: data.message
+    };
+
+    // Tentar enviar usando axios
+    console.log('Enviando mensagem automática...');
+
+    // Tentar diferentes endpoints
+    const endpoints = [
+      `${WHATSAPP_API_URL}/send`,
+      'http://localhost:9029/api/whatsapp/send',
+      'http://whatsapp-api:3000/api/whatsapp/send',
+      'http://host.docker.internal:9029/api/whatsapp/send',
+      'http://127.0.0.1:9029/api/whatsapp/send'
+    ];
+
+    let success = false;
+    let messageId = `msg-auto-${Date.now()}`;
+
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Tentando endpoint: ${endpoint}`);
+        const response = await axios.post(endpoint, messageData, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 5000
+        });
+
+        if (response.status >= 200 && response.status < 300) {
+          success = true;
+          if (response.data.messageId) {
+            messageId = response.data.messageId;
+          }
+          break;
+        }
+      } catch (endpointError) {
+        console.log(`Falhou com endpoint ${endpoint}:`, endpointError.message);
+      }
+    }
+
+    if (!success) {
+      console.log('Todos os endpoints falharam, usando ID simulado');
+      messageId = `msg-auto-simulated-${Date.now()}`;
+    }
+
+    // Registrar evento
+    await createLeadEvent(
+      data.lead_id,
+      'whatsapp_message',
+      {
+        direction: 'outgoing',
+        message: data.message,
+        messageId: messageId,
+        timestamp: new Date().toISOString(),
+        status: success ? 'sent' : 'error',
+        automated: true
+      },
+      'whatsapp'
+    );
+
+    // Salvar na tabela de conversas
+    const { createWhatsAppConversation } = require('../services/whatsappConversationsService');
+
+    const conversationData = {
+      lead_id: data.lead_id,
+      message_id: messageId,
+      phone_number: cleanNumber,
+      direction: 'outgoing',
+      content: data.message,
+      media_type: 'text',
+      message_status: success ? 'sent' : 'error',
+      message_timestamp: new Date().toISOString()
+    };
+
+    await createWhatsAppConversation(conversationData);
+
+    console.log(`Resposta automática registrada para lead ${data.lead_id}`);
+  } catch (error) {
+    console.error('Erro ao enviar resposta automática:', error);
   }
 }

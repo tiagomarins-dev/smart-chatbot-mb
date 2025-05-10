@@ -2,12 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/leads": "pages/leads.js",
-  "/empresas/[id]": "pages/empresas/[id].js",
-  "/dashboard": "pages/dashboard.js",
-  "/projetos": "pages/projetos.js",
-  "/login": "pages/login.js",
-  "/leads/[id]": "pages/leads/[id].js",
   "/projetos/[id]": "pages/projetos/[id].js",
-  "/leads/new": "pages/leads/new.js"
+  "/leads": "pages/leads.js",
+  "/leads/[id]": "pages/leads/[id].js"
 }

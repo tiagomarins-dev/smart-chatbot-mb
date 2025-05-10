@@ -9,6 +9,7 @@ import { useRealtime } from '../../src/contexts/RealtimeContext';
 import Link from 'next/link';
 import LeadEventTimeline from '../../src/components/leads/LeadEventTimeline';
 import LeadWhatsAppChat from '../../src/components/leads/LeadWhatsAppChat';
+import LeadSentimentAnalysis from '../../src/components/leads/LeadSentimentAnalysis';
 
 const LeadDetailPage: NextPage = () => {
   const router = useRouter();
@@ -251,7 +252,7 @@ const LeadDetailPage: NextPage = () => {
 
         <div className="row mb-4">
           {/* Lead Information Card */}
-          <div className="col-lg-4 mb-4 mb-lg-0">
+          <div className="col-lg-6 mb-4 mb-lg-0">
             <div className="card h-100">
               <div className="card-header d-flex align-items-center">
                 <i className="bi bi-info-circle me-2" style={{ color: '#7e57c2' }}></i>
@@ -283,7 +284,7 @@ const LeadDetailPage: NextPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-4">
                   <h6 className="fw-semibold mb-3" style={{ color: '#7e57c2' }}>Detalhes do Lead</h6>
                   <div className="mb-3">
@@ -313,7 +314,7 @@ const LeadDetailPage: NextPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Notes section */}
                 {lead.notes && (
                   <div className="mt-4">
@@ -326,14 +327,14 @@ const LeadDetailPage: NextPage = () => {
               </div>
             </div>
           </div>
-          
-          {/* WhatsApp Chat Card */}
-          <div className="col-lg-5 mb-4 mb-lg-0">
-            <LeadWhatsAppChat lead={lead} isConnected={isConnected} />
-          </div>
 
           {/* Quick Actions and Stats Card */}
-          <div className="col-lg-3">
+          <div className="col-lg-6">
+            {/* Sentiment Analysis Card */}
+            <div className="mb-4">
+              <LeadSentimentAnalysis lead={lead} />
+            </div>
+
             <div className="card mb-4">
               <div className="card-header d-flex align-items-center">
                 <i className="bi bi-lightning me-2" style={{ color: '#7e57c2' }}></i>

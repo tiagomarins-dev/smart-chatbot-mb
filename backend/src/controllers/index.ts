@@ -5,3 +5,6 @@ export * from './leadsController';
 export * from './projectsController';
 export * from './apiKeysController';
 export * from './whatsappController';
+export * from './whatsappConversationsController';
+export * from './leadEventsController';
+export * from './eventCaptureController';

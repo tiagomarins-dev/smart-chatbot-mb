@@ -77,6 +77,10 @@ export interface Lead {
   phone: string;
   status: 'novo' | 'qualificado' | 'contatado' | 'convertido' | 'desistiu' | 'inativo';
   notes?: string;
+  sentiment_status?: 'interessado' | 'sem interesse' | 'compra futura' | 'achou caro' | 'quer desconto' | 'parcelamento' | 'indeterminado';
+  lead_score?: number;
+  ai_analysis?: string;
+  last_sentiment_update?: string;
   created_at?: string;
   updated_at?: string;
 }

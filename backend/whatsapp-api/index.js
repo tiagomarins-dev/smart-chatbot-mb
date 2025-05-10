@@ -7,6 +7,7 @@ const qrcode = require('qrcode');
 const PORT = process.env.PORT || 3000;
 const WEBHOOK_URL = process.env.WEBHOOK_URL || null;
 const WA_DATA_PATH = process.env.WA_DATA_PATH || './wa_data';
+const CAPTURE_EXTERNAL_MESSAGES = process.env.CAPTURE_EXTERNAL_MESSAGES !== 'false'; // Habilitado por padrão
 
 // Iniciar aplicação Express
 const app = express();
@@ -137,15 +138,42 @@ client.on('change_battery', batteryInfo => {
 
 client.on('message', message => {
   console.log('Message received:', message.body);
-  
+
   // Enviar webhook para mensagem recebida
   sendWebhook('message', {
     from: message.from,
+    to: message.to || clientInfo.number ? `${clientInfo.number}@c.us` : undefined,
     body: message.body,
     timestamp: message.timestamp,
     type: message.type,
-    id: message.id.id
+    id: message.id.id,
+    fromMe: false // Explicitar que é incoming
   });
+});
+
+// Capturar mensagens enviadas por outros meios (WhatsApp Web, celular, etc.)
+client.on('message_create', message => {
+  // Apenas processar mensagens enviadas por nós (outgoing)
+  if (message.fromMe) {
+    console.log('Message sent from another source detected:', message.body);
+
+    // Extrair dados da mensagem
+    const messageData = {
+      from: message.from,
+      to: message.to,
+      body: message.body,
+      timestamp: message.timestamp,
+      type: message.type,
+      id: message.id.id,
+      fromMe: true,
+      source: 'external' // Marca como enviada externamente (não pela nossa API)
+    };
+
+    // Enviar webhook para mensagem enviada externamente
+    if (CAPTURE_EXTERNAL_MESSAGES) {
+      sendWebhook('message', messageData);
+    }
+  }
 });
 
 // Função para enviar webhook
@@ -319,32 +347,49 @@ app.post('/api/disconnect', (req, res) => {
 
 app.post('/api/send', async (req, res) => {
   try {
-    const { number, message } = req.body;
-    
+    const { number, message, lead_id } = req.body;
+
     if (!number || !message) {
       return res.status(400).json({ error: 'Number and message are required' });
     }
-    
+
     if (clientState !== 'connected') {
       return res.status(400).json({ error: 'WhatsApp client not connected' });
     }
-    
+
     // Formatar número
     let formattedNumber = number.replace(/\D/g, '');
-    
+
     // Adicionar @c.us se não estiver presente
     if (!formattedNumber.includes('@c.us')) {
       formattedNumber = `${formattedNumber}@c.us`;
     }
-    
+
     // Enviar mensagem
     const response = await client.sendMessage(formattedNumber, message);
-    
+
+    // Criar objeto com informações completas para o webhook
+    const messageData = {
+      from: clientInfo.number ? `${clientInfo.number}@c.us` : 'unknown',
+      to: formattedNumber,
+      body: message,
+      timestamp: new Date().toISOString(),
+      type: 'chat',
+      id: response.id.id,
+      fromMe: true,
+      source: 'api', // Marca como enviada pela nossa API
+      lead_id: lead_id || undefined // Incluir ID do lead se disponível
+    };
+
+    // Enviar webhook manualmente para garantir que a mensagem seja capturada
+    sendWebhook('message', messageData);
+
     res.json({
       success: true,
       to: number,
       status: 'sent',
-      messageId: response.id.id
+      messageId: response.id.id,
+      timestamp: Math.floor(Date.now() / 1000)
     });
   } catch (error) {
     console.error('Error sending message:', error);
