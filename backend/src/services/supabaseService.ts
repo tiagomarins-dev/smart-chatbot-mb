@@ -21,10 +21,51 @@ class SupabaseService {
   private clients: Record<string, SupabaseClient> = {};
 
   private constructor() {
-    // Initialize clients with different role keys
+    // Inicializar clientes com diferentes chaves de função
+    // Configurações avançadas para resolver problemas de conexão e SSL
+    const options = {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false
+      },
+      global: {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        fetch: (url: RequestInfo | URL, init?: RequestInit) => {
+          // Debug da requisição
+          console.log(`Supabase fetch: ${typeof url === 'string' ? url : url.toString()}`);
+
+          // Configurar fetch com opções adicionais de segurança
+          return fetch(url, {
+            ...init,
+            redirect: 'follow',
+            // Aceitar certificados SSL auto-assinados em desenvolvimento
+            // @ts-ignore
+            agent: process.env.NODE_ENV !== 'production' ?
+              new (require('https').Agent)({ rejectUnauthorized: false }) :
+              undefined
+          }).then(response => {
+            // Interceptar a resposta para logging
+            if (!response.ok) {
+              console.error(`Supabase API error: ${response.status} ${response.statusText}`);
+            }
+            return response;
+          }).catch(error => {
+            console.error('Supabase fetch error:', error);
+            throw error;
+          });
+        }
+      }
+    };
+
+    console.log('Inicializando Supabase com URL:', supabaseUrl);
+
     this.clients = {
-      service_role: createClient(supabaseUrl, supabaseServiceKey),
-      anon: createClient(supabaseUrl, supabaseAnonKey),
+      service_role: createClient(supabaseUrl, supabaseServiceKey, options),
+      anon: createClient(supabaseUrl, supabaseAnonKey, options),
     };
   }
 

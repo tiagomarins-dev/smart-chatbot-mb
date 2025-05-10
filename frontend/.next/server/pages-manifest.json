@@ -1,8 +1,10 @@
 {
   "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/projetos/[id]": "pages/projetos/[id].js",
+  "/_error": "pages/_error.js",
   "/leads": "pages/leads.js",
+  "/dashboard": "pages/dashboard.js",
+  "/projetos": "pages/projetos.js",
+  "/empresas": "pages/empresas.js",
   "/leads/[id]": "pages/leads/[id].js"
 }

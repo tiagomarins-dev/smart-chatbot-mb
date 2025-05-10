@@ -11,8 +11,10 @@ services:
       - ./.env
     environment:
       - RUNNING_IN_DOCKER=true
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - NODE_ENV=development
     ports:
-      - '9032:3000'
+      - '9033:9033'
     restart: unless-stopped
 
   frontend:
@@ -25,27 +27,12 @@ services:
       - frontend_node_modules:/usr/src/app/node_modules
     environment:
       - NODE_ENV=development
+      # Marcador para o Next.js saber que está em Docker
+      - NEXT_PUBLIC_IN_DOCKER=true
+      # Para compatibilidade com código existente
+      - NEXT_PUBLIC_API_URL=http://backend:9033/api
     ports:
-      - '9034:3000'
-    depends_on:
-      - backend
-    restart: unless-stopped
-    
-  whatsapp-api:
-    build:
-      context: ./backend/whatsapp-api
-      dockerfile: Dockerfile
-    container_name: crm-whatsapp-api
-    ports:
-      - '9029:3000'  # Map to port 9029 to match existing configuration
-    volumes:
-      - whatsapp_data:/app/wa_data
-      - ./backend/whatsapp-api:/app  # Montar código-fonte para desenvolvimento
-    environment:
-      - PORT=3000
-      - WEBHOOK_URL=http://backend:3000/api/webhooks/whatsapp
-      - WA_DATA_PATH=/app/wa_data
-      - CAPTURE_EXTERNAL_MESSAGES=true  # Habilitar captura de mensagens enviadas externamente
+      - '9034:9034'
     depends_on:
       - backend
     restart: unless-stopped

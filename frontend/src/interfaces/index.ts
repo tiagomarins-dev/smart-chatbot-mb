@@ -7,6 +7,9 @@ export interface ApiResponse<T = any> {
   statusCode: number;
 }
 
+// Import Automated Messages interfaces
+export * from './AutomatedMessages';
+
 // User and Auth
 export interface User {
   id: string;

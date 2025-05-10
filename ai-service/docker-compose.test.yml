@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    environment:
+      - ENVIRONMENT=test
+      - LOG_LEVEL=debug
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug --reload"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  ai-service-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - ai-service
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=test
+      - LOG_LEVEL=debug
+    command: >
+      sh -c "
+        echo 'Waiting for AI service to be ready...' &&
+        sleep 10 &&
+        echo 'Running tests...' &&
+        cd /app && python -m pytest -xvs
+      "
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+
+  redis:
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+EOF < /dev/null

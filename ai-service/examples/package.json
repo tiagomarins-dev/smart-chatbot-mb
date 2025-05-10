@@ -1,0 +1,14 @@
+{
+  "name": "smart-chatbot-mb-ai-client-example",
+  "version": "1.0.0",
+  "description": "Exemplo de cliente Node.js para o serviço de IA do Smart Chatbot MB",
+  "main": "nodejs-client.js",
+  "scripts": {
+    "start": "node nodejs-client.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
+EOF < /dev/null

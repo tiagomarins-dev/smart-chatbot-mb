@@ -5,8 +5,10 @@ require('dotenv').config();
 
 // Get Supabase credentials from environment
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
-const API_URL = process.env.API_URL || 'http://localhost:9032/api';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+const API_URL = process.env.API_URL || 'http://localhost:9033/api';
+
+console.log('SUPABASE_SERVICE_KEY:', SUPABASE_SERVICE_KEY);
 
 console.log('Supabase URL:', SUPABASE_URL);
 console.log('API URL:', API_URL);

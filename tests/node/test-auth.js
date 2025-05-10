@@ -1,7 +1,7 @@
 // Simple script to test authentication API
 const fetch = require('node-fetch');
 
-const API_URL = 'http://localhost:9032/api';
+const API_URL = 'http://localhost:9033/api';
 
 async function testLogin() {
   console.log('Testing login with default credentials...');

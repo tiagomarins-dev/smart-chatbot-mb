@@ -134,6 +134,16 @@ export class ApiClient {
       const responseText = await response.text();
       console.log('Response text:', responseText);
 
+      const contentType = response.headers.get('content-type') || '';
+      // Se não vier JSON, retorna o texto bruto como erro
+      if (!contentType.includes('application/json')) {
+        return {
+          success: false,
+          error: responseText,
+          statusCode: response.status,
+        };
+      }
+
       let data;
       try {
         data = JSON.parse(responseText);

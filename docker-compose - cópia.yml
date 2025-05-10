@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm-backend
+    volumes:
+      - ./backend:/usr/src/app
+      - backend_node_modules:/usr/src/app/node_modules
+    env_file:
+      - ./.env
+    environment:
+      - RUNNING_IN_DOCKER=true
+    ports:
+      - '9033:3000'
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm-frontend
+    volumes:
+      - ./frontend:/usr/src/app
+      - frontend_node_modules:/usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+    ports:
+      - '9034:3000'
+    depends_on:
+      - backend
+    restart: unless-stopped
+    
+  whatsapp-api:
+    build:
+      context: ./backend/whatsapp-api
+      dockerfile: Dockerfile
+    container_name: crm-whatsapp-api
+    ports:
+      - '9029:3000'  # Map to port 9029 to match existing configuration
+    volumes:
+      - whatsapp_data:/app/wa_data
+      - ./backend/whatsapp-api:/app  # Montar código-fonte para desenvolvimento
+    environment:
+      - PORT=3000
+      - WEBHOOK_URL=http://backend:3000/api/webhooks/whatsapp
+      - WA_DATA_PATH=/app/wa_data
+      - CAPTURE_EXTERNAL_MESSAGES=true  # Habilitar captura de mensagens enviadas externamente
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
+  whatsapp_data:  # Add this volume for WhatsApp session persistence

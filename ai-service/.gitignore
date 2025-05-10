@@ -1,0 +1,28 @@
+# Arquivos de ambiente
+.env
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+
+# Logs e dados temporários
+logs/*
+!logs/.gitkeep
+*.log
+
+# Cache
+.cache/
+.coverage
+htmlcov/
+
+# Arquivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dados específicos do sistema
+.DS_Store
