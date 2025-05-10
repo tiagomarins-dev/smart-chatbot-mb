@@ -1,6 +1,7 @@
 import { ApiResponse } from '../interfaces';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9032/api';
+// Base path for API calls proxied through Next.js
+const API_PREFIX = '/api';
 
 /**
  * API client for making requests to the backend
@@ -13,7 +14,7 @@ export class ApiClient {
    */
   setToken(token: string) {
     this.token = token;
-    
+
     // Store token in localStorage for persistence
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth_token', token);
@@ -24,7 +25,6 @@ export class ApiClient {
    * Get the authentication token
    */
   getToken(): string | null {
-    // Try to get from instance, then from localStorage
     if (!this.token && typeof window !== 'undefined') {
       this.token = localStorage.getItem('auth_token');
     }
@@ -45,22 +45,24 @@ export class ApiClient {
    * Make a GET request
    */
   async get<T>(path: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
-    const url = new URL(`${API_URL}${path}`);
-    
-    // Add query parameters
+    let url = `${API_PREFIX}${path}`;
     if (params) {
+      const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          url.searchParams.append(key, String(value));
+          searchParams.append(key, String(value));
         }
       });
+      const query = searchParams.toString();
+      if (query) {
+        url += `?${query}`;
+      }
     }
-    
-    const response = await fetch(url.toString(), {
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: this.getHeaders(),
     });
-    
     return this.handleResponse<T>(response);
   }
 
@@ -68,12 +70,12 @@ export class ApiClient {
    * Make a POST request
    */
   async post<T>(path: string, data?: any): Promise<ApiResponse<T>> {
-    const response = await fetch(`${API_URL}${path}`, {
+    const response = await fetch(`${API_PREFIX}${path}`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
     });
-    
+
     return this.handleResponse<T>(response);
   }
 
@@ -81,20 +83,17 @@ export class ApiClient {
    * Make a PUT request
    */
   async put<T>(path: string, data?: any): Promise<ApiResponse<T>> {
-    // Log para debug
-    console.log(`PUT request to: ${API_URL}${path}`);
+    console.log(`PUT request to: ${API_PREFIX}${path}`);
     console.log('Data being sent:', data);
     console.log('JSON data:', data ? JSON.stringify(data) : 'undefined');
-    
-    const response = await fetch(`${API_URL}${path}`, {
+
+    const response = await fetch(`${API_PREFIX}${path}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
     });
-    
-    // Log para debug
     console.log('Response status:', response.status);
-    
+
     return this.handleResponse<T>(response);
   }
 
@@ -102,11 +101,11 @@ export class ApiClient {
    * Make a DELETE request
    */
   async delete<T>(path: string): Promise<ApiResponse<T>> {
-    const response = await fetch(`${API_URL}${path}`, {
+    const response = await fetch(`${API_PREFIX}${path}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
-    
+
     return this.handleResponse<T>(response);
   }
 
@@ -117,12 +116,12 @@ export class ApiClient {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     const token = this.getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return headers;
   }
 
@@ -131,12 +130,10 @@ export class ApiClient {
    */
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     try {
-      // Log para debug
       console.log('Response status before parsing:', response.status);
       const responseText = await response.text();
       console.log('Response text:', responseText);
-      
-      // Parse texto para JSON
+
       let data;
       try {
         data = JSON.parse(responseText);
@@ -146,11 +143,10 @@ export class ApiClient {
         return {
           success: false,
           error: 'Invalid JSON response: ' + responseText.substring(0, 100) + '...',
-          statusCode: response.status
+          statusCode: response.status,
         };
       }
-      
-      // If the response is not in the expected format, normalize it
+
       if (data.success === undefined) {
         return {
           success: response.ok,
@@ -159,14 +155,14 @@ export class ApiClient {
           statusCode: response.status,
         };
       }
-      
+
       return data;
     } catch (e) {
       console.error('Error in handleResponse:', e);
       return {
         success: false,
         error: 'Error processing response: ' + String(e),
-        statusCode: response.status || 500
+        statusCode: response.status || 500,
       };
     }
   }
