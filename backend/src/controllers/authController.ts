@@ -19,8 +19,10 @@ export async function login(req: Request, res: Response): Promise<void> {
     console.log(`Tentando fazer login com email: ${email}`);
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                         process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     // TEMPORÁRIO: Verificação simplificada para permitir login para teste
     // Verificar as credenciais de teste
@@ -416,8 +418,10 @@ export async function verifyToken(req: Request, res: Response): Promise<void> {
     console.log(`Token válido para usuário ${authResult.user_id}, buscando detalhes do usuário`);
 
     // Detectar se estamos em modo offline
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     // Se estamos em modo offline ou o token já foi criado em modo offline,
     // usar as informações do JWT diretamente

@@ -1,0 +1,18 @@
+{
+  "lead_info": {
+    "id": "a5cd4a8d-1264-4752-b1a3-29e7e5740083",
+    "name": "João Silva",
+    "sentiment_status": "interessado",
+    "lead_score": 85,
+    "project_name": "Residencial Aurora"
+  },
+  "event_context": {
+    "event_type": "visualizou_propriedade",
+    "event_data": {
+      "property_id": "123",
+      "property_name": "Apartamento 101",
+      "viewed_at": "2023-06-01T14:30:00Z"
+    },
+    "message_purpose": "follow_up"
+  }
+}

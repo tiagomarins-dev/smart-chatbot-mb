@@ -69,8 +69,10 @@ export async function getProjects(req: Request, res: Response): Promise<void> {
     console.log('Obtendo projetos para usuário:', userId);
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para projetos');
@@ -278,8 +280,10 @@ export async function getProjectById(req: Request, res: Response): Promise<void>
     console.log(`Obtendo projeto ${projectId} para usuário: ${userId}`);
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para detalhes do projeto');

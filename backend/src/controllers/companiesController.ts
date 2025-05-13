@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { Company, CompanyUpdateRequest } from '../interfaces';
 import { executeQuery, insertData, updateData, QueryFilter } from '../utils/dbUtils';
 import { HttpStatus, sendError, sendSuccess } from '../utils/responseUtils';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * @swagger
@@ -61,39 +63,81 @@ export async function getCompanies(req: Request, res: Response): Promise<void> {
 
     console.log('Obtendo empresas para usuário:', userId);
 
-    // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                          process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    // Detectar se estamos em modo offline
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para empresas');
 
-      // Em modo offline, retornar dados fictícios
-      const mockCompanies: Company[] = [
-        {
-          id: '1',
-          user_id: userId!,
-          name: 'Empresa Demonstração',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          user_id: userId!,
-          name: 'Empresa Teste',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      try {
+        // Tenta carregar os dados do arquivo JSON
+        const dataFilePath = path.resolve(__dirname, '../data/companies.json');
+        console.log('Buscando dados de:', dataFilePath);
+
+        let companies: Company[] = [];
+
+        if (fs.existsSync(dataFilePath)) {
+          const rawData = fs.readFileSync(dataFilePath, 'utf8');
+          const jsonData = JSON.parse(rawData);
+          companies = jsonData.companies.map((company: any) => ({
+            ...company,
+            user_id: userId // Garante que as empresas pertençam ao usuário atual
+          }));
+          console.log(`Carregados ${companies.length} registros de empresas do arquivo`);
+        } else {
+          console.log('Arquivo de dados não encontrado, usando dados padrão');
+          // Dados padrão caso o arquivo não exista
+          companies = [
+            {
+              id: '1',
+              user_id: userId!,
+              name: 'Empresa Demonstração',
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              id: '2',
+              user_id: userId!,
+              name: 'Empresa Teste',
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ];
         }
-      ];
 
-      // Filtrar por ID se necessário
-      const companies = companyId ?
-        mockCompanies.filter(c => c.id === companyId) :
-        mockCompanies;
+        // Filtrar por ID se necessário
+        const filteredCompanies = companyId ?
+          companies.filter(c => c.id === companyId) :
+          companies;
 
-      return sendSuccess(res, { companies });
+        return sendSuccess(res, { companies: filteredCompanies });
+      } catch (error) {
+        console.error('Erro ao carregar dados offline:', error);
+
+        // Dados de fallback em caso de erro
+        const mockCompanies: Company[] = [
+          {
+            id: '1',
+            user_id: userId!,
+            name: 'Empresa Demonstração (Fallback)',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ];
+
+        // Filtrar por ID se necessário
+        const companies = companyId ?
+          mockCompanies.filter(c => c.id === companyId) :
+          mockCompanies;
+
+        return sendSuccess(res, { companies });
+      }
     }
 
     // Caso contrário, continuar com comportamento normal (consulta ao banco)
@@ -207,7 +251,46 @@ export async function getCompanyById(req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Query database for specific company
+    // Detectar se estamos em modo offline
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
+
+    if (OFFLINE_MODE) {
+      console.log('Usando modo offline para busca de empresa por ID');
+
+      try {
+        // Tenta carregar os dados do arquivo JSON
+        const dataFilePath = path.resolve(__dirname, '../data/companies.json');
+        console.log('Buscando dados de:', dataFilePath);
+
+        if (fs.existsSync(dataFilePath)) {
+          const rawData = fs.readFileSync(dataFilePath, 'utf8');
+          const jsonData = JSON.parse(rawData);
+          const companies = jsonData.companies;
+
+          // Encontra a empresa com o ID correspondente
+          const company = companies.find((c: any) => c.id === companyId);
+
+          if (company) {
+            // Garante que a empresa pertença ao usuário atual
+            company.user_id = userId;
+            return sendSuccess(res, { company });
+          } else {
+            return sendError(res, 'Company not found', HttpStatus.NOT_FOUND);
+          }
+        } else {
+          console.log('Arquivo de dados não encontrado');
+          return sendError(res, 'Offline data not available', HttpStatus.NOT_FOUND);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados offline:', error);
+        return sendError(res, 'Error loading offline data', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+
+    // Comportamento normal (consulta ao banco)
     const companies = await executeQuery<Company>({
       table: 'companies',
       select: '*',

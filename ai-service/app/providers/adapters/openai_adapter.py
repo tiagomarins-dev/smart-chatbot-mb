@@ -21,7 +21,7 @@ class OpenAIAdapter(BaseProviderAdapter):
         """Inicializa o cliente OpenAI com credenciais."""
         self.client = openai.OpenAI(api_key=api_key, organization=org_id)
         self._models_info = self._get_models_info()
-        logger.info("OpenAI adapter initialized")
+        logger.info("OpenAI adapter initialized with OpenAI Python Library v1.12.0")
     
     @retry(
         stop=stop_after_attempt(3),
@@ -33,17 +33,18 @@ class OpenAIAdapter(BaseProviderAdapter):
         model = options.get("model", settings.COMPLETION_MODEL)
         max_tokens = options.get("max_tokens", 100)
         temperature = options.get("temperature", 0.7)
-        
+
         logger.info(f"Generating completion with model {model}")
-        
+
         try:
-            response = await self.client.completions.create(
+            # The client.completions.create is already sync in the new OpenAI library
+            response = self.client.completions.create(
                 model=model,
                 prompt=prompt,
                 max_tokens=max_tokens,
                 temperature=temperature
             )
-            
+
             return response.choices[0].text.strip()
         except Exception as e:
             logger.error(f"Error generating completion: {str(e)}")
@@ -59,22 +60,23 @@ class OpenAIAdapter(BaseProviderAdapter):
         model = options.get("model", settings.CHAT_MODEL)
         temperature = options.get("temperature", 0.7)
         response_format = options.get("response_format", None)
-        
+
         # Preparar formato de resposta se solicitado
         api_response_format = None
         if response_format == "json":
             api_response_format = {"type": "json_object"}
-        
+
         logger.info(f"Generating chat response with model {model}")
-        
+
         try:
-            response = await self.client.chat.completions.create(
+            # The client.chat.completions.create is already sync in the new OpenAI library
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=temperature,
                 response_format=api_response_format
             )
-            
+
             return {
                 "message": {
                     "role": response.choices[0].message.role,
@@ -98,15 +100,16 @@ class OpenAIAdapter(BaseProviderAdapter):
     async def get_embedding(self, text: str, options: Dict[str, Any]) -> List[float]:
         """Gera um embedding usando a API da OpenAI."""
         model = options.get("model", settings.EMBEDDING_MODEL)
-        
+
         logger.info(f"Generating embedding with model {model}")
-        
+
         try:
-            response = await self.client.embeddings.create(
+            # The client.embeddings.create is already sync in the new OpenAI library
+            response = self.client.embeddings.create(
                 model=model,
                 input=text
             )
-            
+
             return response.data[0].embedding
         except Exception as e:
             logger.error(f"Error generating embedding: {str(e)}")
@@ -121,9 +124,9 @@ class OpenAIAdapter(BaseProviderAdapter):
         """Analisa o sentimento usando um modelo da OpenAI."""
         model = options.get("model", settings.SENTIMENT_MODEL)
         context = options.get("context", {})
-        
+
         logger.info(f"Analyzing sentiment with model {model}")
-        
+
         system_prompt = """
         Analise o sentimento do texto a seguir e forneça:
         1. Uma pontuação de sentimento de -1 (muito negativo) a 1 (muito positivo)
@@ -135,23 +138,24 @@ class OpenAIAdapter(BaseProviderAdapter):
 
         Responda em formato JSON.
         """
-        
+
         if context.get("product"):
             system_prompt += f"\nContexto: O produto/serviço em questão é {context.get('product')}."
-        
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text}
         ]
-        
+
         try:
-            response = await self.client.chat.completions.create(
+            # The client.chat.completions.create is already sync in the new OpenAI library
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=0.3,
                 response_format={"type": "json_object"}
             )
-            
+
             result = json.loads(response.choices[0].message.content)
             return result
         except Exception as e:
@@ -172,7 +176,7 @@ class OpenAIAdapter(BaseProviderAdapter):
     
     async def _generate_ruth_message(self, context: Dict[str, Any], model: str) -> str:
         """Gera uma mensagem no estilo Ruth usando o prompt XML."""
-        
+
         # XML do prompt da Ruth
         ruth_prompt = """<?xml version="1.0" encoding="UTF-8"?>
 <assistente>
@@ -330,55 +334,55 @@ class OpenAIAdapter(BaseProviderAdapter):
 </sobreEmpresa>
 <instrucoes>
   <valorCurso>Caso o cliente queira saber o valor, certifique-se de que está informando o valor do curso correto, se ele deseja ENEM ou UERJ. Antes explique um pouco melhor sobre a experiência e sobre como pode ajudar a jornada do aluno. Em seguida, passe o valor. Na mesma mensagem. E pergunte se pode enviar o link de matrícula.</valorCurso>
-  
+
   <questaoNaoResolvida>Se o cliente trouxer uma questão que você não saiba resolver, peça que ele entre em contato com o suporte pelo WhatsApp em: https://wa.me/5521971503303.</questaoNaoResolvida>
-  
+
   <tomConsultivo>Responda de forma consultiva e humanizada, usando perguntas para identificar as necessidades do cliente antes de oferecer uma solução.</tomConsultivo>
-  
+
   <formatoMensagem>Use "enter" entre parágrafos para facilitar a leitura e faça apenas uma pergunta por mensagem, sempre no final.</formatoMensagem>
-  
+
   <dialogoAberto>Mantenha o diálogo em aberto e use perguntas incentivadoras de forma estratégica, conforme o contexto e a necessidade de engajamento.</dialogoAberto>
-  
+
   <usoPerguntas>Utilize perguntas como "O que você acha dessa condição?" ou "Faz sentido pra você?" somente quando o cliente demonstrar hesitação, precisar confirmar o entendimento ou para estimular mais detalhes.</usoPerguntas>
-  
+
   <variedadePerguntas>Evite repetir as mesmas perguntas. Varie a abordagem com expressões como "Isso atende ao que você procura?", "Essa opção parece resolver o que você mencionou?" ou "Há algo mais que você gostaria de entender melhor?"</variedadePerguntas>
-  
+
   <engajamento>Quando o cliente estiver engajado, priorize respostas claras e objetivas sem perguntas abertas, utilizando-as apenas se necessário para avançar a conversa.</engajamento>
-  
+
   <balanceamento>Avalie se é necessário enviar uma pergunta no final de cada mensagem para manter a conversa fluida e natural.</balanceamento>
-  
+
   <conduzirCliente>Conduza o cliente a identificar suas dificuldades e a desejar o curso Método Blindado, mostrando como ele pode resolver seus desafios com o suporte adequado.</conduzirCliente>
-  
+
   <limiteCaracteres>Responda com no máximo 300 caracteres por mensagem e 150 caracteres por parágrafo.</limiteCaracteres>
-  
+
   <linksTextoSimples>Envie links em texto simples, sem formatação de hiperlink.</linksTextoSimples>
-  
+
   <textoCorrido>Utilize texto corrido, sem enumerações ou bullet points.</textoCorrido>
-  
+
   <personalizacao>Aproveite qualquer informação fornecida pelo cliente para personalizar a resposta e aumentar a conexão.</personalizacao>
-  
+
   <diferenciais>Enfatize sempre os diferenciais e benefícios dos cursos relacionados ao contexto da conversa.</diferenciais>
-  
+
   <provasSociais>Incentive o cliente a conferir depoimentos e resultados de outros alunos no Instagram: https://www.instagram.com/profmillaborges.</provasSociais>
-  
+
   <expressaoIdiomatica>Utilize expressões idiomáticas acolhedoras para manter um tom acessível e empático.</expressaoIdiomatica>
-  
+
   <contornarObjecoes>Ao enfrentar objeções de compra, contorne-as naturalmente sem inventar benefícios que o curso não possua.</contornarObjecoes>
-  
+
   <informacoesConcisas>Responda com informações concisas, sem enumerações, priorizando o relacionamento e evitando termos técnicos.</informacoesConcisas>
-  
+
   <respostaPergunta>Quando o cliente fizer uma pergunta, responda de forma clara e objetiva, detalhando como o produto resolve problemas ou traz benefícios reais.</respostaPergunta>
-  
+
   <explicacaoAdicional>Se o cliente demonstrar hesitação, ofereça uma explicação adicional focada nos pontos fortes do curso, com exemplos práticos.</explicacaoAdicional>
-  
+
   <assuntoAlterado>Se o cliente abordar assuntos fora do escopo de Milla Borges ou dos cursos, responda de forma respeitosa e descontraída, trazendo o foco de volta ao assunto.</assuntoAlterado>
-  
+
   <cursosDisponiveis>Quando perguntado sobre os cursos disponíveis, informe que você ajudará a encontrar o curso ideal e pergunte o que o cliente está buscando.</cursosDisponiveis>
-  
+
   <perguntaDesconhecida>Se o cliente fizer uma pergunta relacionada aos cursos que você não saiba responder, informe que irá direcioná-lo a um especialista do suporte, dizendo que não sabe.</perguntaDesconhecida>
-  
+
   <direcionarFechamento>Quando o cliente demonstrar interesse positivo, direcione para fechar a venda com mensagens como "Vamos garantir sua vaga hoje mesmo?", "Pronto pra começar?", "Estamos ansiosos para te encontrar no Bonde." ou "Não deixe de aproveitar esta oportunidade".</direcionarFechamento>
-  
+
   <tomNatural>Aja naturalmente, sem pressionar o aluno. O aluno deve se sentir parte do Bonde antes mesmo da matrícula, motivado a fazer parte do curso.</tomNatural>
 </instrucoes>
 <restricoes>
@@ -403,12 +407,12 @@ class OpenAIAdapter(BaseProviderAdapter):
     <beneficios>O Método Blindado é a experiência mais completa de redação ENEM do Brasil. Com aulas práticas, metodologia segura e acompanhamento próximo da professora Milla Borges, você aprende a estruturar textos com confiança, aplicar argumentos específicos e conquistar notas acima de 900.</beneficios>
     <eventoDesafio>Sem eventos no momento</eventoDesafio>
     <caracteristicasMetodoBlindado>
-      - Uma correção de redação por semana (crédito não acumulativo)  
-      - Aula gravada semanal com conteúdos estratégicos  
-      - Mentoria ao vivo com a professora Milla toda terça-feira às 18h30  
-      - Monitorias semanais com professores da equipe  
-      - Simulados ao longo do curso  
-      - Materiais em PDF disponíveis em cada aula  
+      - Uma correção de redação por semana (crédito não acumulativo)
+      - Aula gravada semanal com conteúdos estratégicos
+      - Mentoria ao vivo com a professora Milla toda terça-feira às 18h30
+      - Monitorias semanais com professores da equipe
+      - Simulados ao longo do curso
+      - Materiais em PDF disponíveis em cada aula
       - Curso com início em 11/02/2025 e acesso até o final do ano
     </caracteristicasMetodoBlindado>
     <bonusExclusivos>Sem bônus exclusivos</bonusExclusivos>
@@ -437,12 +441,12 @@ class OpenAIAdapter(BaseProviderAdapter):
     <objetivo>Iniciar a conversa de forma acolhedora, explicando seu papel.</objetivo>
     <acao>Cumprimente o cliente e apresente-se como o assistente da equipe da professora Milla Borges. Indique que está à disposição para entender melhor o que ele busca.</acao>
   </SaudacaoApresentacao>
-  
+
   <IdentificacaoCliente>
     <objetivo>Compreender quem é o cliente (potencial comprador, aluno interessado, contato pessoal ou admirador).</objetivo>
     <acao>Pergunte de maneira aberta sobre o motivo do contato, incentivando o cliente a compartilhar suas necessidades ou interesses.</acao>
   </IdentificacaoCliente>
-  
+
   <DirecaoDadoPerfil>
     <potenciaisCompradores>
       <objetivo>Identificar a necessidade específica e explicar como o curso pode ajudar.</objetivo>
@@ -457,7 +461,7 @@ class OpenAIAdapter(BaseProviderAdapter):
       <acao>Agradeça o carinho e explique que você é o assistente da equipe da Milla Borges. Incentive o cliente a acompanhar as postagens e conteúdos educativos no Instagram: https://www.instagram.com/milla.borges.</acao>
     </admiradores>
   </DirecaoDadoPerfil>
-  
+
   <Encaminhamento>
     <encaminhamentoWhatsapp>Para agendamentos e informações detalhadas, direcione o cliente ao WhatsApp, informando que poderá obter mais detalhes lá. Envie o link de forma simples: https://wa.me/5521971503303.</encaminhamentoWhatsapp>
     <continuacaoConversa>Mantenha o diálogo aberto, incentivando o cliente a compartilhar mais informações ou fazer perguntas adicionais, como "O que você acha dessa opção?" ou "Posso ajudar com mais alguma dúvida?"</continuacaoConversa>
@@ -507,13 +511,13 @@ class OpenAIAdapter(BaseProviderAdapter):
 </objecoes>
 </assistente>
 """
-        
+
         # Preparar mensagens para a API
         messages = [
             {"role": "system", "content": ruth_prompt},
             {"role": "user", "content": context.get("user_message", "")}
         ]
-        
+
         # Adicionar histórico de conversa, se disponível
         conversation_history = context.get("conversation_history", [])
         if conversation_history:
@@ -524,17 +528,18 @@ class OpenAIAdapter(BaseProviderAdapter):
                     "role": role,
                     "content": message.get("content", "")
                 })
-        
+
         logger.info(f"Generating Ruth message with model {model}")
-        
+
         try:
-            response = await self.client.chat.completions.create(
+            # The client.chat.completions.create is already sync in the new OpenAI library
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=0.7,  # Um pouco de criatividade para parecer mais humano
                 max_tokens=150  # Limitando para garantir respostas concisas
             )
-            
+
             return response.choices[0].message.content.strip()
         except Exception as e:
             logger.error(f"Error generating Ruth message: {str(e)}")
@@ -547,20 +552,20 @@ class OpenAIAdapter(BaseProviderAdapter):
         event_type = context.get("event_type", "")
         event_data = context.get("event_data", {})
         message_purpose = context.get("message_purpose", "")
-        
+
         # Construir um prompt para o modelo
         system_prompt = f"""
         Você é um assistente de vendas profissional que está gerando uma mensagem personalizada para um lead.
-        
+
         INFORMAÇÕES DO LEAD:
         - Nome: {lead_info.get('name', 'Cliente')}
         - Status de sentimento: {lead_info.get('sentiment_status', 'indeterminado')}
         - Lead score: {lead_info.get('lead_score', 50)}/100
-        
+
         CONTEXTO:
         - Tipo de evento: {event_type}
         - Propósito da mensagem: {message_purpose}
-        
+
         DIRETRIZES:
         - Seja amigável, profissional e empático
         - Personalize a mensagem com base no status de sentimento do lead
@@ -570,7 +575,7 @@ class OpenAIAdapter(BaseProviderAdapter):
         - Evite linguagem promocional exagerada
         - Não use emojis
         """
-        
+
         # Adicionar instruções específicas baseadas no tipo de evento
         if event_type == "carrinho_abandonado":
             system_prompt += """
@@ -593,7 +598,7 @@ class OpenAIAdapter(BaseProviderAdapter):
             - Ofereça uma informação nova ou valor adicional
             - Pergunte se ainda há interesse
             """
-        
+
         # Adicionar instruções específicas baseadas no status de sentimento
         sentiment_status = lead_info.get("sentiment_status", "indeterminado")
         if sentiment_status == "achou caro":
@@ -610,21 +615,22 @@ class OpenAIAdapter(BaseProviderAdapter):
             - Crie um senso de urgência leve
             - Ofereça facilitar o processo de compra/aquisição
             """
-        
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Gere uma mensagem para este lead sobre o evento {event_type}."}
         ]
-        
+
         logger.info(f"Generating standard lead message with model {model}")
-        
+
         try:
-            response = await self.client.chat.completions.create(
+            # The client.chat.completions.create is already sync in the new OpenAI library
+            response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=0.7
             )
-            
+
             return response.choices[0].message.content.strip()
         except Exception as e:
             logger.error(f"Error generating standard lead message: {str(e)}")
@@ -658,6 +664,7 @@ class OpenAIAdapter(BaseProviderAdapter):
     async def validate_credentials(self) -> bool:
         """Valida se as credenciais da OpenAI estão corretas."""
         try:
+            # The models.list method is sync in the new OpenAI library
             models = self.client.models.list()
             return True if models else False
         except Exception as e:

@@ -7,10 +7,8 @@ import { chatbotService } from '../services/chatbot';
 import axios from 'axios';
 
 // URL base para a API WhatsApp
-// Em Docker usar o nome do serviço, caso contrário usar localhost
-const WHATSAPP_API_URL = process.env.RUNNING_IN_DOCKER === 'true' 
-  ? 'http://whatsapp-api:3000/api/whatsapp'
-  : 'http://localhost:9029/api/whatsapp';
+// Sempre usar a porta 9029 para conexão ao WhatsApp, independente do ambiente
+const WHATSAPP_API_URL = 'http://localhost:9029/api/whatsapp';
 
 // Configurar axios para não validar certificados e aumentar o timeout
 const whatsappAxios = axios.create({

@@ -18,8 +18,10 @@ export async function getLeads(req: Request, res: Response): Promise<void> {
     console.log('Obtendo leads para usuário:', userId);
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para leads');
@@ -223,8 +225,10 @@ export async function getLeadById(req: Request, res: Response): Promise<void> {
     console.log(`Obtendo lead ${leadId} para usuário: ${userId}`);
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                        process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para detalhes do lead');
@@ -759,8 +763,10 @@ export async function getLeadStats(req: Request, res: Response): Promise<void> {
     const periodStartISO = periodStart.toISOString().split('T')[0];
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                         process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para estatísticas de leads');
@@ -1113,8 +1119,10 @@ export async function getUtmCounts(req: Request, res: Response): Promise<void> {
     const companyId = req.query.company_id as string;
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                         process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para contagens de UTM');
@@ -1670,8 +1678,10 @@ export async function getLeadEventsList(req: Request, res: Response): Promise<vo
     }
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                         process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para eventos do lead');
@@ -1863,8 +1873,10 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
     } = req.query;
 
     // Detectar se estamos em modo offline simulado por problemas com proxy/conexão
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                         process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     if (OFFLINE_MODE) {
       console.log('Usando modo offline para busca de leads');

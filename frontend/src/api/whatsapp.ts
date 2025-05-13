@@ -38,13 +38,9 @@ interface ContactMessagesResponse {
   messages: Message[];
 }
 
-// API WhatsApp - precisamos apontar consistentemente para a porta 9029 
+// API WhatsApp - sempre apontando para a porta 9029
 const getApiBaseUrl = (): string => {
-  // Em container Docker
-  if (process.env.NEXT_PUBLIC_USE_DOCKER === 'true') {
-    return 'http://whatsapp-api:3000/api/whatsapp';
-  }
-  // Em desenvolvimento local fora de container
+  // Sempre apontar para localhost:9029, independente do ambiente
   return 'http://localhost:9029/api/whatsapp';
 };
 
@@ -92,11 +88,12 @@ export const whatsappApi = {
       }
       
       // Extrair dados da resposta seguindo a estrutura do backend
+      // Nota: A API retorna diretamente {status, qrCode, phoneNumber} sem estar dentro de um campo "data"
       const statusData: WhatsAppStatus = {
-        status: json.data?.status || 'disconnected',
-        authenticated: json.data?.authenticated || false,
-        phoneNumber: json.data?.phoneNumber || null,
-        timestamp: json.data?.timestamp || new Date().toISOString()
+        status: json.status || 'disconnected',
+        authenticated: json.status === 'connected',
+        phoneNumber: json.phoneNumber || null,
+        timestamp: json.timestamp || new Date().toISOString()
       };
       
       console.log('Extracted WhatsApp status data:', statusData);

@@ -98,22 +98,25 @@ class AIService:
     async def generate_lead_message(self, context: Dict[str, Any], options: Dict[str, Any] = None) -> str:
         """
         Gera uma mensagem personalizada para um lead.
-        
+
         Args:
             context: Contexto do lead e do evento.
             options: Opções para a geração da mensagem.
-            
+
         Returns:
             Mensagem gerada.
         """
         options = options or {}
         provider_name = options.pop("provider", None)
         model = options.get("model", get_model_for_task("chat", provider_name))
-        
+
         logger.info(f"Generating lead message with model {model}")
-        
+
         provider = provider_manager.get_provider(provider_name)
-        return await provider.generate_lead_message(context, {"model": model, **options})
+        # The provider's generate_lead_message method is already async
+        # so we need to wait for its result
+        result = await provider.generate_lead_message(context, {"model": model, **options})
+        return result
     
     async def get_provider_status(self) -> Dict[str, Any]:
         """

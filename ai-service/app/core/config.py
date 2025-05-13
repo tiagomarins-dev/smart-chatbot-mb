@@ -1,6 +1,6 @@
 import os
 from typing import Dict, List, Union, Optional
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """Configurações da aplicação baseadas em variáveis de ambiente."""
@@ -17,7 +17,11 @@ class Settings(BaseSettings):
     # Segurança
     SECRET_KEY: str = os.getenv("SECRET_KEY", "insecure_dev_key_change_this")
     API_KEY: str = os.getenv("API_KEY", "dev_api_key_change_this")
-    ALLOWED_ORIGINS: List[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
+    @property
+    def ALLOWED_ORIGINS(self) -> List[str]:
+        origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+        return origins.split(",")
     
     # Provedores de IA
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
@@ -47,9 +51,10 @@ class Settings(BaseSettings):
         }
     }
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True
+    }
 
 # Instância única das configurações
 settings = Settings()

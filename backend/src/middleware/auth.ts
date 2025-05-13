@@ -47,8 +47,10 @@ export async function verifyToken(token: string): Promise<AuthResult> {
     }
 
     // Detectar se estamos em modo offline
-    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                         process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+    const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
     // Verificar se o token foi gerado para modo offline
     // Tokens offline tipicamente terão um ID de usuário baseado em base64 do email
@@ -409,8 +411,10 @@ export function generateToken(user: User, mode?: string): string {
   }
 
   // Verificar se estamos em modo offline global
-  const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true' ||
-                      process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+  const OFFLINE_MODE = process.env.SUPABASE_OFFLINE_MODE === 'true';
+    // Log para debug
+    console.log('SUPABASE_OFFLINE_MODE =', process.env.SUPABASE_OFFLINE_MODE);
+    console.log('Modo offline está:', OFFLINE_MODE ? 'ATIVADO' : 'DESATIVADO');
 
   if (OFFLINE_MODE && !mode) {
     payload.mode = 'offline';

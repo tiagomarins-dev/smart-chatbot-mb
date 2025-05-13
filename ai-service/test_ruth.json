@@ -1,0 +1,10 @@
+{
+  "user_message": "Olá, gostaria de saber mais sobre o curso de redação",
+  "conversation_history": [
+    {
+      "direction": "incoming",
+      "content": "Olá, gostaria de saber mais sobre o curso de redação",
+      "timestamp": "2023-06-01T10:15:00Z"
+    }
+  ]
+}
