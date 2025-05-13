@@ -2,8 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/projetos": "pages/projetos.js",
   "/whatsapp": "pages/whatsapp.js",
   "/whatsapp/diagnostico": "pages/whatsapp/diagnostico.js",
-  "/leads": "pages/leads.js",
-  "/projetos": "pages/projetos.js"
+  "/automated-messages": "pages/automated-messages.js"
 }
