@@ -102,7 +102,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ lead, isEdit = false, projectId }) 
                   );
                   
                   if (matchingProject && matchingProject.company_id) {
-                    const matchingCompany = activeCompanies.find(
+                    const matchingCompany = companies.find(
                       c => c.id === matchingProject.company_id
                     );
                     

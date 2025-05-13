@@ -12,6 +12,11 @@
   ],
   "rootMainFiles": [],
   "pages": {
+    "/": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/index.js"
+    ],
     "/_app": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -22,20 +27,25 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
+    "/dashboard": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/dashboard.js"
+    ],
+    "/empresas/[id]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/empresas/[id].js"
+    ],
     "/projetos": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/projetos.js"
     ],
-    "/whatsapp": [
+    "/projetos/[id]": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/whatsapp.js"
-    ],
-    "/whatsapp/diagnostico": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/whatsapp/diagnostico.js"
+      "static/chunks/pages/projetos/[id].js"
     ]
   },
   "ampFirstPages": []
