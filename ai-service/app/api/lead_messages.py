@@ -81,11 +81,12 @@ async def analyze_lead(
         )
         
         # Mapear resultado para formato esperado
+        # A OpenAI pode retornar com chaves diferentes, vamos normalizar
         return {
-            "sentiment_status": sentiment_result.get("sentiment_status", "indeterminado"),
+            "sentiment_status": sentiment_result.get("sentiment_status") or sentiment_result.get("status_lead", "indeterminado"),
             "lead_score": sentiment_result.get("lead_score", 50),
-            "ai_analysis": sentiment_result.get("analysis", "Análise não disponível"),
-            "recommended_actions": sentiment_result.get("recommended_actions", []),
+            "ai_analysis": sentiment_result.get("analysis") or sentiment_result.get("ai_analysis", "Análise não disponível"),
+            "recommended_actions": sentiment_result.get("recommended_actions") or sentiment_result.get("recomendacoes", []),
             # Informações de debug
             "prompt_used": analysis_text,
             "ai_model": sentiment_result.get("model_used", "gpt-3.5-turbo"),

@@ -128,15 +128,31 @@ class OpenAIAdapter(BaseProviderAdapter):
         logger.info(f"Analyzing sentiment with model {model}")
 
         system_prompt = """
-        Analise o sentimento do texto a seguir e forneça:
-        1. Uma pontuação de sentimento de -1 (muito negativo) a 1 (muito positivo)
-        2. A intenção principal (pergunta, reclamação, elogio, solicitação, informação)
-        3. Entidades relevantes mencionadas e o sentimento associado a cada uma
-        4. Status do lead (interessado, sem interesse, achou caro, quer desconto, parcelamento, compra futura, indeterminado)
-        5. Lead score (0-100) indicando proximidade de conversão
-        6. Recomendações para abordagem
-
-        Responda em formato JSON.
+        Você é um especialista em análise de comportamento de leads e vendas online.
+        
+        Analise o histórico completo do lead considerando:
+        - Conversas do WhatsApp (se houver)
+        - Eventos e ações realizadas
+        - Contexto e notas
+        
+        IMPORTANTE - Eventos de alta intenção de compra:
+        - "acessou_checkout" ou "carrinho_abandonado" = Lead estava prestes a comprar (score mínimo: 75)
+        - "clicou_link_compra" ou "clicou_link_pagamento" = Forte interesse (score mínimo: 70)
+        - "visualizou_produto" múltiplas vezes = Interesse consistente (score mínimo: 60)
+        - "form_submit" ou "solicitou_contato" = Lead qualificado (score mínimo: 50)
+        
+        Forneça sua análise em JSON com:
+        - sentiment_status: (interessado, sem interesse, achou caro, quer desconto, parcelamento, compra futura, indeterminado)
+        - lead_score: 0-100 (100 = pronto para comprar agora, 0 = sem interesse)
+        - analysis: Análise detalhada em português
+        - recommended_actions: Lista de ações recomendadas em português
+        
+        REGRAS IMPORTANTES:
+        1. Carrinho abandonado SEMPRE indica alta intenção (mínimo score 75)
+        2. Múltiplos eventos de engajamento aumentam o score
+        3. Seja específico nas recomendações baseado nos eventos
+        
+        Responda SEMPRE em formato JSON válido.
         """
 
         if context.get("product"):
