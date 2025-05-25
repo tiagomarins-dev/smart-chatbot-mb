@@ -1983,6 +1983,242 @@ export async function getLeadEventsList(req: Request, res: Response): Promise<vo
   }
 }
 
+/**
+ * @swagger
+ * /api/leads/{id}/analyze:
+ *   post:
+ *     summary: Analyze a lead using AI
+ *     description: Performs AI-powered analysis on a lead based on their WhatsApp conversations, events, activities and engagement history
+ *     tags: [Leads]
+ *     security:
+ *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: ID of the lead to analyze
+ *     responses:
+ *       200:
+ *         description: Lead analysis completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     lead_id:
+ *                       type: string
+ *                       format: uuid
+ *                       example: "123e4567-e89b-12d3-a456-426614174000"
+ *                     analysis:
+ *                       type: object
+ *                       properties:
+ *                         sentiment_status:
+ *                           type: string
+ *                           enum: [interessado, sem interesse, compra futura, achou caro, quer desconto, parcelamento, indeterminado]
+ *                           example: "interessado"
+ *                           description: Current sentiment status of the lead
+ *                         lead_score:
+ *                           type: number
+ *                           minimum: 0
+ *                           maximum: 100
+ *                           example: 85
+ *                           description: Lead score indicating purchase proximity (0-100)
+ *                         ai_analysis:
+ *                           type: string
+ *                           example: "O lead demonstra forte interesse e está próximo de uma decisão de compra. As mensagens indicam urgência e comprometimento."
+ *                           description: Detailed AI analysis text
+ *                         recommended_actions:
+ *                           type: array
+ *                           items:
+ *                             type: string
+ *                           example: ["Contato imediato com proposta final", "Oferecer condições especiais para fechamento"]
+ *                           description: AI-recommended actions for this lead
+ *                         analysis_timestamp:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-05-25T15:30:00Z"
+ *                           description: Timestamp of when the analysis was performed
+ *                         prompt_used:
+ *                           type: string
+ *                           example: "Lead: João Silva\n\nConversas:\n[Cliente]: Quanto custa?\n[Empresa]: R$ 1000\n..."
+ *                           description: The prompt sent to the AI model
+ *                         ai_model:
+ *                           type: string
+ *                           example: "gpt-3.5-turbo"
+ *                           description: The AI model used for analysis
+ *                         ai_raw_response:
+ *                           type: object
+ *                           description: Raw response from the AI service including all details
+ *       400:
+ *         description: Bad request - Lead ID is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized - invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Lead not found or unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       503:
+ *         description: Service unavailable - AI service is temporarily unavailable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+/**
+ * Analyze a lead using AI
+ */
+export async function analyzeLead(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    const leadId = req.params.id;
+
+    if (!leadId) {
+      sendError(res, 'Lead ID is required', HttpStatus.BAD_REQUEST);
+      return;
+    }
+
+    console.log(`Analyzing lead ${leadId} for user ${userId}`);
+
+    // Verify lead exists and belongs to user
+    const leads = await executeQuery<Lead>({
+      table: 'leads',
+      select: '*',
+      filters: [
+        { column: 'id', operator: 'eq', value: leadId },
+        { column: 'user_id', operator: 'eq', value: userId }
+      ]
+    });
+
+    if (leads.length === 0) {
+      sendError(res, 'Lead not found or unauthorized', HttpStatus.NOT_FOUND);
+      return;
+    }
+
+    const lead = leads[0];
+
+    // Get recent WhatsApp conversations for the lead
+    const supabase = getSupabaseAdmin();
+    const { data: conversations, error: conversationsError } = await supabase
+      .from('whatsapp_conversations')
+      .select('content, direction, created_at')
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: false })
+      .limit(20); // Get last 20 messages for analysis
+
+    if (conversationsError) {
+      console.error('Error fetching conversations:', conversationsError);
+      // Don't fail if no conversations, continue with events
+    }
+
+    // Get lead events and activities
+    const events = await getLeadEvents(leadId);
+    
+    // Get lead's associated projects for more context
+    const leadProjects = await executeQuery<LeadProject>({
+      table: 'lead_project',
+      select: '*',
+      filters: [
+        { column: 'lead_id', operator: 'eq', value: leadId }
+      ]
+    });
+
+    // Call AI service to analyze the lead
+    try {
+      const response = await fetch(`${process.env.AI_SERVICE_URL || 'http://ai-service:8050'}/v1/analyze-lead`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.AI_SERVICE_KEY || ''}`
+        },
+        body: JSON.stringify({
+          lead_id: leadId,
+          lead_name: lead.name,
+          lead_email: lead.email,
+          lead_phone: lead.phone,
+          current_status: lead.status,
+          conversations: conversations || [],
+          events: events || [],
+          projects: leadProjects || [],
+          lead_created_at: lead.created_at,
+          lead_updated_at: lead.updated_at,
+          lead_notes: lead.notes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI service responded with status ${response.status}`);
+      }
+
+      const aiAnalysis = await response.json();
+
+      // Update lead with AI analysis results
+      const updates = {
+        sentiment_status: aiAnalysis.sentiment_status,
+        lead_score: aiAnalysis.lead_score,
+        ai_analysis: aiAnalysis.ai_analysis,
+        last_sentiment_update: new Date().toISOString()
+      };
+
+      await updateData<Lead>(
+        'leads',
+        [{ column: 'id', operator: 'eq', value: leadId }],
+        updates
+      );
+
+      // Return analysis results
+      sendSuccess(res, {
+        lead_id: leadId,
+        analysis: {
+          sentiment_status: aiAnalysis.sentiment_status,
+          lead_score: aiAnalysis.lead_score,
+          ai_analysis: aiAnalysis.ai_analysis,
+          recommended_actions: aiAnalysis.recommended_actions || [],
+          analysis_timestamp: new Date().toISOString(),
+          // Debug information
+          prompt_used: aiAnalysis.prompt_used || null,
+          ai_model: aiAnalysis.ai_model || 'unknown',
+          ai_raw_response: aiAnalysis.ai_raw_response || null
+        }
+      });
+    } catch (aiError) {
+      console.error('Error calling AI service:', aiError);
+      
+      // Não usar fallback - retornar erro se AI service falhar
+      sendError(res, 'AI service is currently unavailable. Please try again later.', 503);
+      return;
+    }
+  } catch (error) {
+    console.error('Error analyzing lead:', error);
+    sendError(res, error, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+}
+
 export async function searchLeads(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user?.id;

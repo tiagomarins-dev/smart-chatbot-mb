@@ -8,7 +8,8 @@ import {
   getLeadStats,
   getUtmCounts,
   searchLeads,
-  getLeadEventsList
+  getLeadEventsList,
+  analyzeLead
 } from '../controllers/leadsController';
 import authenticate from '../middleware/auth';
 
@@ -43,5 +44,8 @@ router.put('/:id/status', updateLeadStatus);
 
 // Get lead events list
 router.get('/:id/events-list', getLeadEventsList);
+
+// Analyze lead using AI
+router.post('/:id/analyze', analyzeLead);
 
 export default router;

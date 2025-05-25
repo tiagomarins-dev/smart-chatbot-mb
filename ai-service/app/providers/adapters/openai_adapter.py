@@ -157,6 +157,10 @@ class OpenAIAdapter(BaseProviderAdapter):
             )
 
             result = json.loads(response.choices[0].message.content)
+            # Adicionar informações sobre o modelo e prompts usados
+            result["model_used"] = model
+            result["prompt_system"] = system_prompt
+            result["prompt_user"] = text
             return result
         except Exception as e:
             logger.error(f"Error analyzing sentiment: {str(e)}")

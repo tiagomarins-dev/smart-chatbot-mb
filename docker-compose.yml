@@ -13,9 +13,15 @@ services:
       - RUNNING_IN_DOCKER=true
       - NODE_TLS_REJECT_UNAUTHORIZED=0
       - NODE_ENV=development
+      - AI_SERVICE_URL=http://ai-service:8050
+      - AI_SERVICE_KEY=internal-api-key-2024
     ports:
       - '9033:9033'
     restart: unless-stopped
+    depends_on:
+      - ai-service
+    networks:
+      - smart-chatbox-network
 
   frontend:
     build:
@@ -36,8 +42,55 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    networks:
+      - smart-chatbox-network
+
+  # AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: smart-chatbox-ai-service
+    restart: unless-stopped
+    ports:
+      - "9035:8050"
+    environment:
+      - PORT=8050
+      - HOST=0.0.0.0
+      - ENVIRONMENT=production
+      - LOG_LEVEL=info
+      - API_KEY=internal-api-key-2024
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-COLOQUE_SUA_CHAVE_OPENAI_AQUI}
+      - DEFAULT_PROVIDER=openai
+      - CHAT_MODEL=gpt-3.5-turbo
+      - SENTIMENT_MODEL=gpt-3.5-turbo
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_ENABLED=true
+    volumes:
+      - ./ai-service/logs:/app/logs
+    depends_on:
+      - redis
+    networks:
+      - smart-chatbox-network
+
+  # Redis para cache do AI Service
+  redis:
+    image: redis:7-alpine
+    container_name: smart-chatbox-redis
+    restart: unless-stopped
+    ports:
+      - "9036:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - smart-chatbox-network
+
+networks:
+  smart-chatbox-network:
+    driver: bridge
 
 volumes:
   backend_node_modules:
   frontend_node_modules:
   whatsapp_data:  # Add this volume for WhatsApp session persistence
+  redis-data:

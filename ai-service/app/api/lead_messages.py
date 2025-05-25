@@ -16,6 +16,92 @@ from app.core.auth import get_api_key
 router = APIRouter(prefix="/lead-messages", tags=["lead-messages"])
 logger = logging.getLogger(__name__)
 
+@router.post("/analyze-lead", response_model=Dict[str, Any])
+async def analyze_lead(
+    request: Dict[str, Any],
+    ai_service: AIService = Depends(),
+    api_key: str = Depends(get_api_key)
+):
+    """
+    Analisa um lead com base em conversas, eventos e atividades.
+    
+    Args:
+        request: Dados do lead incluindo conversas, eventos e contexto.
+        ai_service: Serviço de IA injetado.
+        
+    Returns:
+        Análise completa do lead com sentimento, score e recomendações.
+    """
+    try:
+        # Extrair dados do request
+        lead_id = request.get("lead_id")
+        lead_name = request.get("lead_name")
+        conversations = request.get("conversations", [])
+        events = request.get("events", [])
+        projects = request.get("projects", [])
+        
+        # Preparar contexto para análise
+        context = {
+            "lead_id": lead_id,
+            "lead_name": lead_name,
+            "current_status": request.get("current_status"),
+            "conversations": conversations,
+            "events": events,
+            "projects": projects,
+            "lead_notes": request.get("lead_notes"),
+            "lead_created_at": request.get("lead_created_at"),
+            "lead_updated_at": request.get("lead_updated_at")
+        }
+        
+        # Analisar sentimento usando o serviço de IA
+        # Combinar conversas e eventos em texto para análise
+        analysis_text = f"Lead: {lead_name}\n\n"
+        
+        # Adicionar conversas
+        if conversations:
+            analysis_text += "Conversas:\n"
+            for conv in conversations[-10:]:  # Últimas 10 mensagens
+                direction = "Cliente" if conv.get("direction") == "incoming" else "Empresa"
+                analysis_text += f"[{direction}]: {conv.get('content', '')}\n"
+        
+        # Adicionar eventos
+        if events:
+            analysis_text += "\nEventos:\n"
+            for event in events[-10:]:  # Últimos 10 eventos
+                analysis_text += f"- {event.get('event_type')}: {event.get('event_data', {})}\n"
+        
+        # Adicionar notas
+        if request.get("lead_notes"):
+            analysis_text += f"\nNotas: {request.get('lead_notes')}\n"
+        
+        # Realizar análise de sentimento
+        sentiment_result = await ai_service.analyze_sentiment(
+            text=analysis_text,
+            context=context
+        )
+        
+        # Mapear resultado para formato esperado
+        return {
+            "sentiment_status": sentiment_result.get("sentiment_status", "indeterminado"),
+            "lead_score": sentiment_result.get("lead_score", 50),
+            "ai_analysis": sentiment_result.get("analysis", "Análise não disponível"),
+            "recommended_actions": sentiment_result.get("recommended_actions", []),
+            # Informações de debug
+            "prompt_used": analysis_text,
+            "ai_model": sentiment_result.get("model_used", "gpt-3.5-turbo"),
+            "ai_raw_response": sentiment_result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error analyzing lead: {str(e)}")
+        # Retornar análise padrão em caso de erro
+        return {
+            "sentiment_status": "indeterminado",
+            "lead_score": 50,
+            "ai_analysis": f"Erro na análise: {str(e)}",
+            "recommended_actions": []
+        }
+
 @router.post("/generate", response_model=MessageResponse)
 async def generate_lead_message(
     request: LeadMessageRequest,
