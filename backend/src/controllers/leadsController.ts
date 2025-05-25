@@ -429,6 +429,134 @@ export async function getLeadById(req: Request, res: Response): Promise<void> {
 }
 
 /**
+ * @swagger
+ * /leads:
+ *   post:
+ *     summary: Criar um novo lead
+ *     description: Captura um novo lead e associa a um projeto. Se um lead com o mesmo email já existir, apenas cria a associação com o projeto.
+ *     tags: [Leads]
+ *     security:
+ *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - phone
+ *               - project_id
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "João da Silva"
+ *                 description: Nome completo do lead
+ *               first_name:
+ *                 type: string
+ *                 example: "João"
+ *                 description: Primeiro nome (opcional, será extraído do nome completo se não fornecido)
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "joao@exemplo.com"
+ *                 description: Email do lead
+ *               phone:
+ *                 type: string
+ *                 example: "(21) 99999-8877"
+ *                 description: Telefone do lead (será formatado automaticamente)
+ *               project_id:
+ *                 type: string
+ *                 format: uuid
+ *                 example: "123e4567-e89b-12d3-a456-426614174000"
+ *                 description: ID do projeto ao qual o lead será associado
+ *               notes:
+ *                 type: string
+ *                 example: "Cliente interessado em serviço premium"
+ *                 description: Observações sobre o lead (opcional)
+ *               utm_source:
+ *                 type: string
+ *                 example: "google"
+ *                 description: Origem da campanha UTM
+ *               utm_medium:
+ *                 type: string
+ *                 example: "cpc"
+ *                 description: Meio da campanha UTM
+ *               utm_campaign:
+ *                 type: string
+ *                 example: "black-friday-2025"
+ *                 description: Nome da campanha UTM
+ *               utm_term:
+ *                 type: string
+ *                 example: "imoveis-luxo"
+ *                 description: Termo da campanha UTM
+ *               utm_content:
+ *                 type: string
+ *                 example: "banner-topo"
+ *                 description: Conteúdo da campanha UTM
+ *     responses:
+ *       201:
+ *         description: Lead criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     lead:
+ *                       $ref: '#/components/schemas/Lead'
+ *                     message:
+ *                       type: string
+ *                       example: "Lead captured successfully"
+ *                     details:
+ *                       type: object
+ *                       properties:
+ *                         name:
+ *                           type: string
+ *                           example: "João da Silva"
+ *                         project:
+ *                           type: string
+ *                           example: "Campanha de Verão"
+ *                         captured_at:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-05-25T15:30:00Z"
+ *                 statusCode:
+ *                   type: number
+ *                   example: 201
+ *       400:
+ *         description: Dados inválidos ou campos obrigatórios faltando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Não autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Projeto não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+/**
  * Capture a new lead
  */
 export async function captureLead(req: Request, res: Response): Promise<void> {

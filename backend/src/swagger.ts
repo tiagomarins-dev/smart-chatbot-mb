@@ -1,12 +1,11 @@
 import swaggerJSDoc from 'swagger-jsdoc';
-import { version } from '../package.json';
 
 const options: swaggerJSDoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
       title: 'Smart-ChatBox API',
-      version,
+      version: '1.0.0',
       description: 'API para gerenciamento de empresas, projetos, leads e autenticação.',
       contact: {
         name: 'Tiago Marins',
@@ -21,6 +20,36 @@ const options: swaggerJSDoc.Options = {
       {
         url: '/api',
         description: 'Servidor de produção',
+      },
+    ],
+    tags: [
+      {
+        name: 'Auth',
+        description: 'Autenticação e gerenciamento de sessão',
+      },
+      {
+        name: 'Companies',
+        description: 'Gerenciamento de empresas',
+      },
+      {
+        name: 'Projects',
+        description: 'Gerenciamento de projetos',
+      },
+      {
+        name: 'Leads',
+        description: 'Gerenciamento de leads e captura',
+      },
+      {
+        name: 'Contacts',
+        description: 'Gerenciamento de contatos',
+      },
+      {
+        name: 'API Keys',
+        description: 'Gerenciamento de chaves de API',
+      },
+      {
+        name: 'WhatsApp',
+        description: 'Integração com WhatsApp',
       },
     ],
     components: {
