@@ -238,13 +238,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
   // Helper function to get sentiment badge color
   const getSentimentBadgeColor = (status?: string) => {
     switch (status) {
-      case 'interessado': return 'bg-success';
-      case 'compra futura': return 'bg-primary';
-      case 'achou caro': return 'bg-warning';
-      case 'quer desconto': return 'bg-warning';
-      case 'parcelamento': return 'bg-info';
-      case 'sem interesse': return 'bg-danger';
-      case 'indeterminado': return 'bg-secondary';
+      case 'interessado': return 'bg-success text-white';
+      case 'compra futura': return 'bg-primary text-white';
+      case 'achou caro': return 'bg-warning text-dark';
+      case 'quer desconto': return 'bg-warning text-dark';
+      case 'parcelamento': return 'bg-info text-white';
+      case 'sem interesse': return 'bg-danger text-white';
+      case 'indeterminado': return 'bg-secondary text-white';
       default: return 'bg-light text-muted';
     }
   };
