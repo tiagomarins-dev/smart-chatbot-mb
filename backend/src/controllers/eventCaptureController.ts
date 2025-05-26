@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { sendError, sendSuccess } from '../utils/responseUtils';
 import { HttpStatus } from '../utils/responseUtils';
-import { createLeadEvent } from '../services/leadEventsService';
+import { createLeadEvent, getLeadEvents } from '../services/leadEventsService';
 import { getSupabaseAdmin } from '../services/supabaseService';
+import { executeQuery } from '../utils/dbUtils';
 
 /**
  * @swagger
@@ -123,11 +124,111 @@ export async function captureEvent(req: Request, res: Response): Promise<void> {
     const event = await createLeadEvent(leadId, event_type, eventData, origin);
     
     if (event) {
+      let aiAnalysisStatus = {
+        analyzed: false,
+        success: false,
+        sentiment_status: null as string | null,
+        lead_score: null as number | null,
+        error: null as string | null
+      };
+
+      // Analisar o lead automaticamente após criar o evento
+      try {
+        const analyzeUrl = `${process.env.AI_SERVICE_URL || 'http://localhost:9035'}/v1/analyze-lead`;
+        
+        // Buscar dados do lead para análise
+        const leadQuery = await executeQuery(
+          'SELECT * FROM leads WHERE id = $1',
+          [leadId]
+        );
+        
+        if (leadQuery.length > 0) {
+          const lead = leadQuery[0] as any;
+          
+          // Buscar conversas recentes
+          const conversations = await executeQuery(
+            'SELECT content, direction, created_at FROM whatsapp_conversations WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 20',
+            [leadId]
+          );
+          
+          // Buscar todos os eventos
+          const events = await getLeadEvents(leadId);
+          
+          // Buscar projetos associados
+          const leadProjects = await executeQuery(
+            'SELECT * FROM lead_project WHERE lead_id = $1',
+            [leadId]
+          );
+          
+          aiAnalysisStatus.analyzed = true;
+          
+          // Chamar AI Service
+          const response = await fetch(analyzeUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.AI_SERVICE_KEY || ''}`
+            },
+            body: JSON.stringify({
+              lead_id: leadId,
+              lead_name: lead.name,
+              lead_email: lead.email,
+              lead_phone: lead.phone,
+              current_status: lead.status,
+              conversations: conversations || [],
+              events: events || [],
+              projects: leadProjects || [],
+              lead_created_at: lead.created_at,
+              lead_updated_at: lead.updated_at,
+              lead_notes: lead.notes
+            })
+          });
+          
+          if (response.ok) {
+            const aiAnalysis = await response.json();
+            
+            // Atualizar lead com análise
+            const supabase = getSupabaseAdmin();
+            const { error: updateError } = await supabase
+              .from('leads')
+              .update({
+                sentiment_status: aiAnalysis.sentiment_status,
+                lead_score: aiAnalysis.lead_score,
+                ai_analysis: aiAnalysis.ai_analysis,
+                last_sentiment_update: new Date().toISOString()
+              })
+              .eq('id', leadId);
+            
+            if (updateError) {
+              console.error(`Failed to update lead ${leadId} with analysis:`, updateError);
+              aiAnalysisStatus.error = `Failed to update lead: ${updateError.message}`;
+            } else {
+              aiAnalysisStatus.success = true;
+              aiAnalysisStatus.sentiment_status = aiAnalysis.sentiment_status;
+              aiAnalysisStatus.lead_score = aiAnalysis.lead_score;
+            }
+            
+            console.log(`Lead ${leadId} analyzed automatically after event creation`);
+          } else {
+            aiAnalysisStatus.error = `AI service responded with ${response.status}`;
+            console.error(`Failed to analyze lead ${leadId}: AI service responded with ${response.status}`);
+          }
+        } else {
+          aiAnalysisStatus.error = 'Lead not found';
+        }
+      } catch (analyzeError) {
+        // Não falhar a criação do evento se a análise falhar
+        aiAnalysisStatus.analyzed = true;
+        aiAnalysisStatus.error = analyzeError instanceof Error ? analyzeError.message : 'Unknown error';
+        console.error('Error analyzing lead after event creation:', analyzeError);
+      }
+      
       sendSuccess(res, {
         success: true,
         message: 'Event captured successfully',
         lead_id: leadId,
-        event_id: event.id
+        event_id: event.id,
+        ai_analysis: aiAnalysisStatus
       });
     } else {
       sendError(res, 'Failed to register event', HttpStatus.INTERNAL_SERVER_ERROR);

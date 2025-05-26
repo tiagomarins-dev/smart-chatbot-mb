@@ -2150,7 +2150,7 @@ export async function analyzeLead(req: Request, res: Response): Promise<void> {
 
     // Call AI service to analyze the lead
     try {
-      const response = await fetch(`${process.env.AI_SERVICE_URL || 'http://ai-service:8050'}/v1/analyze-lead`, {
+      const response = await fetch(`${process.env.AI_SERVICE_URL || 'http://localhost:9035'}/v1/analyze-lead`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

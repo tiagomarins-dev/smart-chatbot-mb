@@ -149,9 +149,17 @@ export async function createLeadEventController(req: Request, res: Response): Pr
     const event = await createLeadEvent(leadId, event_type, event_data, origin);
     
     if (event) {
+      let aiAnalysisStatus = {
+        analyzed: false,
+        success: false,
+        sentiment_status: null as string | null,
+        lead_score: null as number | null,
+        error: null as string | null
+      };
+
       // Analisar o lead automaticamente após criar o evento
       try {
-        const analyzeUrl = `${process.env.AI_SERVICE_URL || 'http://ai-service:8050'}/v1/analyze-lead`;
+        const analyzeUrl = `${process.env.AI_SERVICE_URL || 'http://localhost:9035'}/v1/analyze-lead`;
         
         // Buscar dados do lead para análise
         const leadQuery = await executeQuery(
@@ -176,6 +184,8 @@ export async function createLeadEventController(req: Request, res: Response): Pr
             'SELECT * FROM lead_project WHERE lead_id = $1',
             [leadId]
           );
+          
+          aiAnalysisStatus.analyzed = true;
           
           // Chamar AI Service
           const response = await fetch(analyzeUrl, {
@@ -216,19 +226,32 @@ export async function createLeadEventController(req: Request, res: Response): Pr
             
             if (updateError) {
               console.error(`Failed to update lead ${leadId} with analysis:`, updateError);
+              aiAnalysisStatus.error = `Failed to update lead: ${updateError.message}`;
+            } else {
+              aiAnalysisStatus.success = true;
+              aiAnalysisStatus.sentiment_status = aiAnalysis.sentiment_status;
+              aiAnalysisStatus.lead_score = aiAnalysis.lead_score;
             }
             
             console.log(`Lead ${leadId} analyzed automatically after event creation`);
           } else {
+            aiAnalysisStatus.error = `AI service responded with ${response.status}`;
             console.error(`Failed to analyze lead ${leadId}: AI service responded with ${response.status}`);
           }
+        } else {
+          aiAnalysisStatus.error = 'Lead not found';
         }
       } catch (analyzeError) {
         // Não falhar a criação do evento se a análise falhar
+        aiAnalysisStatus.analyzed = true;
+        aiAnalysisStatus.error = analyzeError instanceof Error ? analyzeError.message : 'Unknown error';
         console.error('Error analyzing lead after event creation:', analyzeError);
       }
       
-      sendSuccess(res, { event });
+      sendSuccess(res, { 
+        event,
+        ai_analysis: aiAnalysisStatus
+      });
     } else {
       sendError(res, 'Failed to create lead event', HttpStatus.INTERNAL_SERVER_ERROR);
     }
