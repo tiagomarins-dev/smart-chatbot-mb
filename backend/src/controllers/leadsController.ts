@@ -2797,3 +2797,163 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
     }
   }
 }
+/**
+ * @swagger
+ * /api/leads/{id}/ai-analysis-logs:
+ *   get:
+ *     summary: Get AI analysis logs for a lead
+ *     description: Returns the history of AI analysis attempts for a specific lead
+ *     tags: [leads]
+ *     security:
+ *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Lead ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum number of logs to return
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of logs to skip for pagination
+ *     responses:
+ *       200:
+ *         description: AI analysis logs successfully retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     logs:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           lead_id:
+ *                             type: string
+ *                           analyzed_at:
+ *                             type: string
+ *                             format: date-time
+ *                           success:
+ *                             type: boolean
+ *                           sentiment_status:
+ *                             type: string
+ *                             nullable: true
+ *                           lead_score:
+ *                             type: integer
+ *                             nullable: true
+ *                           ai_model:
+ *                             type: string
+ *                             nullable: true
+ *                           prompt_tokens:
+ *                             type: integer
+ *                             nullable: true
+ *                           completion_tokens:
+ *                             type: integer
+ *                             nullable: true
+ *                           total_tokens:
+ *                             type: integer
+ *                             nullable: true
+ *                           response_time_ms:
+ *                             type: integer
+ *                             nullable: true
+ *                           error_message:
+ *                             type: string
+ *                             nullable: true
+ *                           trigger_source:
+ *                             type: string
+ *                           trigger_details:
+ *                             type: object
+ *                             nullable: true
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                     total:
+ *                       type: integer
+ *                       description: Total number of logs for the lead
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Lead not found
+ *       500:
+ *         description: Internal server error
+ */
+export async function getAIAnalysisLogs(req: Request, res: Response): Promise<void> {
+  const user = (req as any).user;
+  const userId = user?.id;
+
+  if (!userId) {
+    sendError(res, 'User not authenticated', HttpStatus.UNAUTHORIZED);
+    return;
+  }
+
+  const leadId = req.params.id;
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = parseInt(req.query.offset as string) || 0;
+
+  try {
+    // First check if the lead exists and belongs to the user
+    const leads = await fetchData<Lead>('leads', {
+      select: 'id',
+      filters: [
+        { column: 'id', operator: 'eq', value: leadId },
+        { column: 'user_id', operator: 'eq', value: userId }
+      ],
+      limit: 1
+    });
+
+    if (leads.length === 0) {
+      sendError(res, 'Lead not found or unauthorized', HttpStatus.NOT_FOUND);
+      return;
+    }
+
+    // Fetch AI analysis logs
+    const logs = await fetchData('lead_ai_analysis_logs', {
+      select: '*',
+      filters: [
+        { column: 'lead_id', operator: 'eq', value: leadId }
+      ],
+      orderBy: [{ column: 'analyzed_at', order: 'desc' }],
+      limit,
+      offset
+    });
+
+    // Get total count
+    const countResult = await fetchData('lead_ai_analysis_logs', {
+      select: 'count',
+      filters: [
+        { column: 'lead_id', operator: 'eq', value: leadId }
+      ],
+      count: true
+    });
+
+    const total = countResult?.[0]?.count || 0;
+
+    sendSuccess(res, {
+      logs,
+      total
+    });
+  } catch (error) {
+    console.error('Error fetching AI analysis logs:', error);
+    sendError(res, error, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+}

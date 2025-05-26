@@ -11,6 +11,7 @@ import LeadEventTimeline from '../../src/components/leads/LeadEventTimeline';
 import LeadWhatsAppChat from '../../src/components/leads/LeadWhatsAppChat';
 import LeadSentimentAnalysis from '../../src/components/leads/LeadSentimentAnalysis';
 import LeadAutomatedMessages from '../../src/components/leads/LeadAutomatedMessages';
+import { LeadAIAnalysisLogs } from '../../src/components/leads/LeadAIAnalysisLogs';
 
 const LeadDetailPage: NextPage = () => {
   const router = useRouter();
@@ -444,7 +445,7 @@ const LeadDetailPage: NextPage = () => {
         </div>
 
         {/* Automated Messages Section */}
-        <div className="card">
+        <div className="card mb-4">
           <div className="card-header d-flex align-items-center">
             <i className="bi bi-robot me-2" style={{ color: '#7e57c2' }}></i>
             <h5 className="mb-0">Mensagens Automatizadas</h5>
@@ -452,6 +453,19 @@ const LeadDetailPage: NextPage = () => {
           <div className="card-body">
             {lead && lead.id && (
               <LeadAutomatedMessages leadId={lead.id} />
+            )}
+          </div>
+        </div>
+
+        {/* AI Analysis Logs Section */}
+        <div className="card">
+          <div className="card-header d-flex align-items-center">
+            <i className="bi bi-cpu me-2" style={{ color: '#7e57c2' }}></i>
+            <h5 className="mb-0">Histórico de Análises de IA</h5>
+          </div>
+          <div className="card-body">
+            {lead && lead.id && (
+              <LeadAIAnalysisLogs leadId={lead.id} />
             )}
           </div>
         </div>

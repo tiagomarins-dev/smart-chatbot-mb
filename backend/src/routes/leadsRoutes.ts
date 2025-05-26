@@ -9,7 +9,8 @@ import {
   getUtmCounts,
   searchLeads,
   getLeadEventsList,
-  analyzeLead
+  analyzeLead,
+  getAIAnalysisLogs
 } from '../controllers/leadsController';
 import authenticate from '../middleware/auth';
 
@@ -47,5 +48,8 @@ router.get('/:id/events-list', getLeadEventsList);
 
 // Analyze lead using AI
 router.post('/:id/analyze', analyzeLead);
+
+// Get AI analysis logs for a lead
+router.get('/:id/ai-analysis-logs', getAIAnalysisLogs);
 
 export default router;

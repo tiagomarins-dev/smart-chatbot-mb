@@ -162,6 +162,8 @@ export async function captureEvent(req: Request, res: Response): Promise<void> {
           
           aiAnalysisStatus.analyzed = true;
           
+          const startTime = Date.now();
+          
           // Chamar AI Service
           const response = await fetch(analyzeUrl, {
             method: 'POST',
@@ -186,6 +188,7 @@ export async function captureEvent(req: Request, res: Response): Promise<void> {
           
           if (response.ok) {
             const aiAnalysis = await response.json();
+            const responseTime = Date.now() - startTime;
             
             // Atualizar lead com análise
             const supabase = getSupabaseAdmin();
@@ -208,10 +211,51 @@ export async function captureEvent(req: Request, res: Response): Promise<void> {
               aiAnalysisStatus.lead_score = aiAnalysis.lead_score;
             }
             
+            // Salvar log da análise
+            await supabase
+              .from('lead_ai_analysis_logs')
+              .insert({
+                lead_id: leadId,
+                success: !updateError,
+                sentiment_status: aiAnalysis.sentiment_status,
+                lead_score: aiAnalysis.lead_score,
+                ai_model: aiAnalysis.ai_model || 'gpt-3.5-turbo',
+                prompt_tokens: aiAnalysis.prompt_tokens,
+                completion_tokens: aiAnalysis.completion_tokens,
+                total_tokens: aiAnalysis.total_tokens,
+                response_time_ms: responseTime,
+                trigger_source: 'event_capture',
+                trigger_details: {
+                  event_type: event_type,
+                  event_id: event.id,
+                  phone: phone,
+                  email: email
+                }
+              });
+            
             console.log(`Lead ${leadId} analyzed automatically after event creation`);
           } else {
+            const responseTime = Date.now() - startTime;
             aiAnalysisStatus.error = `AI service responded with ${response.status}`;
             console.error(`Failed to analyze lead ${leadId}: AI service responded with ${response.status}`);
+            
+            // Salvar log de erro
+            const supabase = getSupabaseAdmin();
+            await supabase
+              .from('lead_ai_analysis_logs')
+              .insert({
+                lead_id: leadId,
+                success: false,
+                response_time_ms: responseTime,
+                error_message: aiAnalysisStatus.error,
+                trigger_source: 'event_capture',
+                trigger_details: {
+                  event_type: event_type,
+                  event_id: event.id,
+                  phone: phone,
+                  email: email
+                }
+              });
           }
         } else {
           aiAnalysisStatus.error = 'Lead not found';

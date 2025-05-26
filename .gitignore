@@ -54,3 +54,8 @@ temp/
 # Arquivos de produção
 dist/
 build/
+
+# Next.js
+.next/
+out/
+.vercel
