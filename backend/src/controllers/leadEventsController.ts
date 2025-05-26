@@ -9,6 +9,7 @@ import {
   createLeadEvent 
 } from '../services/leadEventsService';
 import { executeQuery } from '../utils/dbUtils';
+import { getSupabaseAdmin } from '../services/supabaseService';
 
 /**
  * Get all events for a specific lead
@@ -93,7 +94,8 @@ export async function getLeadEventsSummaryController(req: Request, res: Response
     // Converter o resultado para um registro de origem: contagem
     const eventsByOrigin: Record<string, number> = {};
     for (const row of originsResult) {
-      eventsByOrigin[row.origin || 'unknown'] = parseInt(row.count);
+      const typedRow = row as { origin: string | null; count: string };
+      eventsByOrigin[typedRow.origin || 'unknown'] = parseInt(typedRow.count);
     }
     
     // Buscar a data do último evento
@@ -105,7 +107,7 @@ export async function getLeadEventsSummaryController(req: Request, res: Response
     `;
     
     const lastEventResult = await executeQuery(lastEventQuery, [leadId]);
-    const lastActivity = lastEventResult.length > 0 ? lastEventResult[0].created_at : null;
+    const lastActivity = lastEventResult.length > 0 ? (lastEventResult[0] as { created_at: string }).created_at : null;
     
     // Contar o total de eventos
     const totalEvents = Object.values(eventsByType).reduce((sum, count) => sum + count, 0);
@@ -147,6 +149,85 @@ export async function createLeadEventController(req: Request, res: Response): Pr
     const event = await createLeadEvent(leadId, event_type, event_data, origin);
     
     if (event) {
+      // Analisar o lead automaticamente após criar o evento
+      try {
+        const analyzeUrl = `${process.env.AI_SERVICE_URL || 'http://ai-service:8050'}/v1/analyze-lead`;
+        
+        // Buscar dados do lead para análise
+        const leadQuery = await executeQuery(
+          'SELECT * FROM leads WHERE id = $1',
+          [leadId]
+        );
+        
+        if (leadQuery.length > 0) {
+          const lead = leadQuery[0] as any;
+          
+          // Buscar conversas recentes
+          const conversations = await executeQuery(
+            'SELECT content, direction, created_at FROM whatsapp_conversations WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 20',
+            [leadId]
+          );
+          
+          // Buscar todos os eventos
+          const events = await getLeadEvents(leadId);
+          
+          // Buscar projetos associados
+          const leadProjects = await executeQuery(
+            'SELECT * FROM lead_project WHERE lead_id = $1',
+            [leadId]
+          );
+          
+          // Chamar AI Service
+          const response = await fetch(analyzeUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.AI_SERVICE_KEY || ''}`
+            },
+            body: JSON.stringify({
+              lead_id: leadId,
+              lead_name: lead.name,
+              lead_email: lead.email,
+              lead_phone: lead.phone,
+              current_status: lead.status,
+              conversations: conversations || [],
+              events: events || [],
+              projects: leadProjects || [],
+              lead_created_at: lead.created_at,
+              lead_updated_at: lead.updated_at,
+              lead_notes: lead.notes
+            })
+          });
+          
+          if (response.ok) {
+            const aiAnalysis = await response.json();
+            
+            // Atualizar lead com análise
+            const supabase = getSupabaseAdmin();
+            const { error: updateError } = await supabase
+              .from('leads')
+              .update({
+                sentiment_status: aiAnalysis.sentiment_status,
+                lead_score: aiAnalysis.lead_score,
+                ai_analysis: aiAnalysis.ai_analysis,
+                last_sentiment_update: new Date().toISOString()
+              })
+              .eq('id', leadId);
+            
+            if (updateError) {
+              console.error(`Failed to update lead ${leadId} with analysis:`, updateError);
+            }
+            
+            console.log(`Lead ${leadId} analyzed automatically after event creation`);
+          } else {
+            console.error(`Failed to analyze lead ${leadId}: AI service responded with ${response.status}`);
+          }
+        }
+      } catch (analyzeError) {
+        // Não falhar a criação do evento se a análise falhar
+        console.error('Error analyzing lead after event creation:', analyzeError);
+      }
+      
       sendSuccess(res, { event });
     } else {
       sendError(res, 'Failed to create lead event', HttpStatus.INTERNAL_SERVER_ERROR);
