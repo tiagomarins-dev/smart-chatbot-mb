@@ -11,15 +11,17 @@ Smart-ChatBox is a multi-service WhatsApp CRM system with AI-powered lead manage
 ### Services and Ports
 - **Backend API** (Node.js/Express): Port 9033
 - **Frontend** (Next.js): Port 9034  
-- **AI Service** (Python/FastAPI): Port 8050
+- **AI Service** (Python/FastAPI): Port 8050 (development) / Port 9035 (Docker)
 - **WhatsApp Service**: Integrated with backend
 - **Database**: Supabase PostgreSQL
+- **Redis Cache**: Port 9036 (for AI service)
 
 ### Key Technologies
-- **Backend**: TypeScript, Express, Supabase JS Client, WebSocket
-- **Frontend**: Next.js 13, React 18, Bootstrap 5
-- **AI Service**: FastAPI, OpenAI, Redis caching
+- **Backend**: TypeScript, Express, Supabase JS Client, WebSocket, Jest
+- **Frontend**: Next.js 13, React 18, Bootstrap 5, React Bootstrap
+- **AI Service**: FastAPI, OpenAI GPT-3.5/4, Redis caching
 - **Infrastructure**: Docker Compose, Supabase
+- **Authentication**: JWT (backend custom) + Supabase Auth
 
 ## Common Development Commands
 
@@ -37,6 +39,9 @@ npm run build
 # Run tests
 npm test
 
+# Run specific test
+npm test -- --testNamePattern="test name"
+
 # Lint code
 npm run lint
 ```
@@ -46,7 +51,7 @@ npm run lint
 # Install dependencies
 cd frontend && npm install
 
-# Run development server
+# Run development server (port 9034)
 npm run dev
 
 # Build for production
@@ -70,130 +75,223 @@ pip install -r requirements.txt
 # Run development server
 ./start-dev.sh  # Or: uvicorn app.main:app --reload --port 8050
 
+# Run with Docker (recommended for integration)
+docker compose up -d ai-service
+
 # Run tests
 pytest
+
+# Test specific endpoint
+./test-api.sh
 ```
 
 ### Docker Development
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
+
+# Start specific services
+docker compose up -d backend frontend ai-service
 
 # Rebuild and restart backend
 ./scripts/service-utils/rebuild-backend.sh
 
 # View logs
-docker-compose logs -f [service-name]
+docker compose logs -f [service-name]
+
+# Restart specific service
+docker compose restart [service-name]
 
 # Stop all services
-docker-compose down
+docker compose down
 ```
 
 ### Database Management
 ```bash
-# Run migrations
+# Run all migrations
 cd supabase && ./run-migrations.sh
 
 # Apply specific migration
 psql $DATABASE_URL -f migrations/[migration-file].sql
+
+# Check migration status
+psql $DATABASE_URL -c "SELECT * FROM schema_migrations;"
 ```
 
 ## Critical Configuration
 
-### Environment Variables (.env)
-Required environment variables:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_JWT_SECRET`
-- `OPENAI_API_KEY` (for AI service)
+### Environment Variables
 
-### Service Communication
-- Frontend communicates with backend via `/api` endpoints
-- Backend integrates with AI service at `http://ai-service:8050`
-- All services use Supabase for authentication and data persistence
-- WebSocket support for real-time features
+#### Backend (.env)
+```
+SUPABASE_URL=https://[project-ref].supabase.co
+SUPABASE_ANON_KEY=[anon-key]
+SUPABASE_SERVICE_ROLE_KEY=[service-role-key]
+SUPABASE_JWT_SECRET=[jwt-secret]
+JWT_SECRET=[custom-jwt-secret]
+AI_SERVICE_URL=http://localhost:9035  # or http://ai-service:8050 in Docker
+AI_SERVICE_KEY=[optional-api-key]
+```
 
-## Project Structure Highlights
+#### AI Service (.env)
+```
+OPENAI_API_KEY=[your-openai-key]
+API_KEY=[service-api-key]
+REDIS_URL=redis://localhost:9036
+```
 
-### Backend Structure
-- `/src/controllers/` - Request handlers for each resource
-- `/src/services/` - Business logic and integrations
-- `/src/middleware/` - Auth and request processing
-- `/src/interfaces/` - TypeScript type definitions
-- `/src/services/chatbot/` - WhatsApp chatbot integration
+### Authentication Flow
+1. **Login**: User credentials → Supabase Auth → JWT token (custom) + Supabase session
+2. **API Requests**: Bearer token (custom JWT) validated by middleware
+3. **Supabase Queries**: Service role key for admin operations
 
-### AI Service Structure
-- `/app/api/` - FastAPI route handlers
-- `/app/services/` - AI processing logic
-- `/app/providers/` - AI provider adapters (OpenAI)
-- `/app/models/` - Pydantic data models
+## High-level Architecture
 
-### Database Schema
-Key tables:
-- `companies` - Multi-tenant organization data
-- `projects` - Campaign/project management
-- `leads` - Lead information and tracking
-- `lead_events` - Lead activity timeline
-- `whatsapp_conversations` - Chat history
-- `lead_sentiment_analysis` - AI-powered sentiment tracking
-- `automated_messages` - Message automation configuration
+### Request Flow
+1. **Frontend** → API request with JWT token
+2. **Backend** validates token → processes request
+3. **Backend** → Supabase for data operations
+4. **Backend** → AI Service for analysis (when needed)
+5. **AI Service** → OpenAI API for processing
+6. **Response** flows back through the chain
+
+### Lead Analysis Pipeline
+1. **Event Trigger**: New lead event or manual analysis request
+2. **Data Collection**: Fetch lead data, WhatsApp conversations, events
+3. **AI Processing**: Send to AI service for sentiment analysis
+4. **Score Calculation**: 0-100 lead score based on engagement
+5. **Status Update**: Update lead with sentiment status and score
+6. **Logging**: Save analysis results to `lead_ai_analysis_logs`
+
+### WhatsApp Integration
+1. **Connection**: QR code scanning creates persistent session
+2. **Message Reception**: Webhook receives messages
+3. **Storage**: Messages saved to `whatsapp_conversations`
+4. **Smart Chatbot**: Analyzes messages and auto-responds to common questions
+5. **Lead Association**: Messages linked to leads via phone number
+
+## Key Database Operations
+
+### Using executeQuery (Supabase wrapper)
+```typescript
+// Query with filters
+const results = await executeQuery<Type>({
+  table: 'table_name',
+  select: 'column1, column2',
+  filters: [
+    { column: 'id', operator: 'eq', value: id }
+  ],
+  limit: 10,
+  offset: 0
+});
+
+// Raw SQL query
+const results = await executeQuery(
+  'SELECT * FROM table WHERE column = $1',
+  [value]
+);
+```
+
+### Common Patterns
+```typescript
+// Insert data
+await insertData('table_name', { column: value });
+
+// Update data
+await updateData<Type>(
+  'table_name',
+  [{ column: 'id', operator: 'eq', value: id }],
+  { column: newValue }
+);
+```
 
 ## Testing Approach
 
 ### Backend Testing
-- Jest with TypeScript support
-- Test files in `backend/src/__tests__/`
-- Mock Supabase client available
-- Run: `cd backend && npm test`
+```bash
+# Run all tests
+cd backend && npm test
+
+# Test with coverage
+npm test -- --coverage
+
+# Test specific controller
+npm test -- controllers/leadsController.test.ts
+```
 
 ### Integration Testing
 ```bash
-# Test Supabase connection
-./scripts/test-utils/test-supabase-connection.js
+# Test authentication flow
+curl -X POST http://localhost:9033/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password"}'
 
-# Test WhatsApp endpoints
-./scripts/test-utils/test-whatsapp-endpoints.sh
+# Test lead analysis
+curl -X POST http://localhost:9033/api/leads/{id}/analyze \
+  -H "Authorization: Bearer {token}"
 
-# Test offline mode
-./scripts/test-utils/test-offline-companies.sh
+# Test AI service
+curl -X POST http://localhost:9035/v1/analyze-lead \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {api-key}" \
+  -d @test_lead.json
 ```
 
 ## Key Features Implementation
 
-### WhatsApp Integration
-- Uses whatsapp-web.js library
-- Session persistence in Docker volume
-- QR code generation for authentication
-- Real-time message capture and storage
+### AI-Powered Lead Analysis
+- **Endpoint**: `POST /api/leads/:id/analyze`
+- **Automatic Triggers**: On new lead events via `leadEventsController`
+- **Sentiment Categories**: interessado, sem interesse, compra futura, achou caro, quer desconto, parcelamento, indeterminado
+- **Lead Scoring**: 0-100 based on engagement and intent
+- **High-Intent Events**: abandoned_cart (75+), clicked_payment_link (70+)
 
-### Lead Sentiment Analysis
-- Cron job runs every 2 hours (`cron/sentiment-analysis-cron.sh`)
-- Analyzes WhatsApp conversations using OpenAI
-- Updates lead sentiment scores and analysis
+### WhatsApp Smart Chatbot
+- **Auto-responds** to common project questions (price, location, delivery date)
+- **Project Detection**: Matches project names in messages
+- **Response Categories**: Price, delivery, location, size/layout, general info
+- **Conversation Tracking**: All messages stored with timestamps and analysis
 
-### Automated Messaging
-- Event-based triggers for automated responses
-- Template management system
-- Integration with AI service for dynamic content
+### Automated Messaging System
+- **Event-based Triggers**: Lead creation, status change, custom events
+- **Template Management**: Create and manage message templates
+- **Personalization**: Dynamic content based on lead data
+- **Scheduling**: Time-based message delivery
 
 ### Real-time Features
-- WebSocket server for live updates
-- Supabase real-time subscriptions
-- Frontend real-time notifications
+- **WebSocket Server**: For live updates (port 9033)
+- **Supabase Realtime**: Database change notifications
+- **Frontend Updates**: React components with real-time data
 
 ## Development Workflow
 
-1. **Feature Development**: Create feature branches from main
-2. **Local Testing**: Use Docker Compose for full stack testing
-3. **Database Changes**: Create migration files in `supabase/migrations/`
-4. **API Changes**: Update Swagger documentation
-5. **AI Service Changes**: Test with example payloads in `ai-service/test_*.json`
+1. **Feature Development**: 
+   - Create feature branch from main
+   - Update tests for new functionality
+   - Run linting before commits
+
+2. **Database Changes**:
+   - Create migration file in `supabase/migrations/`
+   - Test migration locally first
+   - Update TypeScript interfaces
+
+3. **API Changes**:
+   - Update controller with JSDoc/Swagger comments
+   - Add/update tests
+   - Update route definitions
+
+4. **AI Service Changes**:
+   - Test with example payloads
+   - Update prompt engineering in adapters
+   - Monitor token usage
 
 ## Important Notes
 
-- The project includes legacy PHP components in `projeto_php/` - avoid modifying unless necessary
-- WhatsApp session data persists in Docker volumes
-- Offline mode utilities available for development without external dependencies
-- Sentiment analysis requires valid OpenAI API key
-- All new endpoints should include proper authentication middleware
+- **Authentication**: Backend uses custom JWT, not Supabase JWT directly
+- **AI Service URL**: Use `http://localhost:9035` for local development
+- **Database Queries**: Prefer `executeQuery` over direct Supabase client
+- **Error Handling**: Always use try-catch with proper error responses
+- **Offline Mode**: Set `SUPABASE_OFFLINE_MODE=true` for mock data
+- **Lead Analysis Logs**: All AI analyses are logged in `lead_ai_analysis_logs`
+- **WhatsApp Session**: Persists in Docker volume `wa_sessions`
+- **Frontend Build**: .next directory should not be committed to Git

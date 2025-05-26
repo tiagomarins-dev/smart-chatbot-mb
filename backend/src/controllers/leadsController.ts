@@ -2150,6 +2150,7 @@ export async function analyzeLead(req: Request, res: Response): Promise<void> {
 
     // Call AI service to analyze the lead
     try {
+      const startTime = Date.now();
       const response = await fetch(`${process.env.AI_SERVICE_URL || 'http://localhost:9035'}/v1/analyze-lead`, {
         method: 'POST',
         headers: {
@@ -2176,6 +2177,7 @@ export async function analyzeLead(req: Request, res: Response): Promise<void> {
       }
 
       const aiAnalysis = await response.json();
+      const responseTime = Date.now() - startTime;
 
       // Update lead with AI analysis results
       const updates = {
@@ -2190,6 +2192,32 @@ export async function analyzeLead(req: Request, res: Response): Promise<void> {
         [{ column: 'id', operator: 'eq', value: leadId }],
         updates
       );
+
+      // Save analysis log
+      try {
+        await insertData('lead_ai_analysis_logs', {
+          lead_id: leadId,
+          analyzed_at: new Date().toISOString(),
+          success: true,
+          sentiment_status: aiAnalysis.sentiment_status,
+          lead_score: aiAnalysis.lead_score,
+          ai_model: aiAnalysis.ai_model || 'gpt-3.5-turbo',
+          prompt_tokens: aiAnalysis.usage?.prompt_tokens || aiAnalysis.prompt_tokens || null,
+          completion_tokens: aiAnalysis.usage?.completion_tokens || aiAnalysis.completion_tokens || null,
+          total_tokens: aiAnalysis.usage?.total_tokens || aiAnalysis.total_tokens || null,
+          response_time_ms: responseTime,
+          error_message: null,
+          trigger_source: 'manual',
+          trigger_details: {
+            user_id: userId,
+            endpoint: '/api/leads/:id/analyze',
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (logError) {
+        console.error('Failed to save AI analysis log:', logError);
+        // Non-critical error, continue with response
+      }
 
       // Return analysis results
       sendSuccess(res, {
@@ -2208,6 +2236,32 @@ export async function analyzeLead(req: Request, res: Response): Promise<void> {
       });
     } catch (aiError) {
       console.error('Error calling AI service:', aiError);
+      
+      // Save failed analysis log
+      try {
+        await insertData('lead_ai_analysis_logs', {
+          lead_id: leadId,
+          analyzed_at: new Date().toISOString(),
+          success: false,
+          sentiment_status: null,
+          lead_score: null,
+          ai_model: 'unknown',
+          prompt_tokens: null,
+          completion_tokens: null,
+          total_tokens: null,
+          response_time_ms: null,
+          error_message: aiError instanceof Error ? aiError.message : String(aiError),
+          trigger_source: 'manual',
+          trigger_details: {
+            user_id: userId,
+            endpoint: '/api/leads/:id/analyze',
+            timestamp: new Date().toISOString(),
+            error_type: aiError instanceof Error ? aiError.name : 'UnknownError'
+          }
+        });
+      } catch (logError) {
+        console.error('Failed to save AI analysis error log:', logError);
+      }
       
       // Não usar fallback - retornar erro se AI service falhar
       sendError(res, 'AI service is currently unavailable. Please try again later.', 503);
@@ -2912,7 +2966,8 @@ export async function getAIAnalysisLogs(req: Request, res: Response): Promise<vo
 
   try {
     // First check if the lead exists and belongs to the user
-    const leads = await fetchData<Lead>('leads', {
+    const leads = await executeQuery<Lead>({
+      table: 'leads',
       select: 'id',
       filters: [
         { column: 'id', operator: 'eq', value: leadId },
@@ -2927,26 +2982,29 @@ export async function getAIAnalysisLogs(req: Request, res: Response): Promise<vo
     }
 
     // Fetch AI analysis logs
-    const logs = await fetchData('lead_ai_analysis_logs', {
+    const logs = await executeQuery({
+      table: 'lead_ai_analysis_logs',
       select: '*',
       filters: [
         { column: 'lead_id', operator: 'eq', value: leadId }
       ],
-      orderBy: [{ column: 'analyzed_at', order: 'desc' }],
+      order: { 'analyzed_at': 'desc' },
       limit,
       offset
     });
 
-    // Get total count
-    const countResult = await fetchData('lead_ai_analysis_logs', {
-      select: 'count',
-      filters: [
-        { column: 'lead_id', operator: 'eq', value: leadId }
-      ],
-      count: true
-    });
+    // Get total count using Supabase admin client for count
+    const supabase = getSupabaseAdmin();
+    const { count, error: countError } = await supabase
+      .from('lead_ai_analysis_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('lead_id', leadId);
 
-    const total = countResult?.[0]?.count || 0;
+    if (countError) {
+      console.error('Error getting count:', countError);
+    }
+
+    const total = count || 0;
 
     sendSuccess(res, {
       logs,
@@ -2954,6 +3012,6 @@ export async function getAIAnalysisLogs(req: Request, res: Response): Promise<vo
     });
   } catch (error) {
     console.error('Error fetching AI analysis logs:', error);
-    sendError(res, error, HttpStatus.INTERNAL_SERVER_ERROR);
+    sendError(res, error as Error, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
