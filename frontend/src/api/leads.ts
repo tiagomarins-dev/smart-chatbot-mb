@@ -88,6 +88,29 @@ export const leadsApi = {
     period?: number;
   }): Promise<ApiResponse<LeadStatsResponse>> => {
     return await apiClient.get<LeadStatsResponse>('/leads/stats', params);
+  },
+
+  /**
+   * Search leads with advanced filters
+   */
+  searchLeads: async (params?: { 
+    search?: string;
+    company_id?: string;
+    project_id?: string;
+    status?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    date_from?: string;
+    date_to?: string;
+    min_score?: string | number;
+    max_score?: string | number;
+    order_by?: string;
+    order_direction?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<any>> => {
+    return await apiClient.get<any>('/leads/search', params);
   }
 };
 

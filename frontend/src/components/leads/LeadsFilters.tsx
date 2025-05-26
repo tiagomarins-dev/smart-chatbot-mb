@@ -25,6 +25,8 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({ onFilterChange, currentFilt
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
   const [isUtmExpanded, setIsUtmExpanded] = useState(true);
   const [isGeneralExpanded, setIsGeneralExpanded] = useState(true);
+  const [isScoreExpanded, setIsScoreExpanded] = useState(true);
+  const [isSortExpanded, setIsSortExpanded] = useState(true);
 
   // Load companies and projects
   useEffect(() => {
@@ -350,6 +352,119 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({ onFilterChange, currentFilt
               </div>
             )}
           </div>
+
+          {/* Lead Score Filter */}
+          <div className="col-12 mb-3">
+            <div 
+              className="d-flex justify-content-between align-items-center py-2 mb-2"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setIsScoreExpanded(!isScoreExpanded)}
+            >
+              <strong style={{ color: '#673ab7' }}>Pontuação do Lead</strong>
+              <button className="btn btn-sm p-0" style={{ color: '#673ab7' }}>
+                <i className={`bi ${isScoreExpanded ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+              </button>
+            </div>
+            
+            {isScoreExpanded && (
+              <div className="row">
+                <div className="col-12 mb-3">
+                  <label htmlFor="score_filter" className="form-label">Filtrar por pontuação</label>
+                  <select
+                    className="form-select"
+                    id="score_filter"
+                    value={currentFilters.score_filter || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        // Remove filters
+                        const newFilters = { ...currentFilters };
+                        delete newFilters.min_score;
+                        delete newFilters.max_score;
+                        delete newFilters.score_filter;
+                        updateFilters(newFilters);
+                      } else if (value === '100') {
+                        updateFilters({ min_score: '100', max_score: '100', score_filter: value });
+                      } else {
+                        // Set min_score based on selection
+                        updateFilters({ min_score: value, score_filter: value });
+                      }
+                    }}
+                    style={{ 
+                      borderRadius: '8px', 
+                      padding: '0.6rem 1rem',
+                      borderColor: 'rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    <option value="">Todas as pontuações</option>
+                    <option value="50">Acima de 50</option>
+                    <option value="60">Acima de 60</option>
+                    <option value="70">Acima de 70</option>
+                    <option value="80">Acima de 80</option>
+                    <option value="90">Acima de 90</option>
+                    <option value="100">Apenas 100</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sort Options */}
+          <div className="col-12 mb-3">
+            <div 
+              className="d-flex justify-content-between align-items-center py-2 mb-2"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setIsSortExpanded(!isSortExpanded)}
+            >
+              <strong style={{ color: '#673ab7' }}>Ordenação</strong>
+              <button className="btn btn-sm p-0" style={{ color: '#673ab7' }}>
+                <i className={`bi ${isSortExpanded ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+              </button>
+            </div>
+            
+            {isSortExpanded && (
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="order_by" className="form-label">Ordenar por</label>
+                  <select
+                    className="form-select"
+                    id="order_by"
+                    value={currentFilters.order_by || 'created_at'}
+                    onChange={(e) => updateFilters({ order_by: e.target.value })}
+                    style={{ 
+                      borderRadius: '8px', 
+                      padding: '0.6rem 1rem',
+                      borderColor: 'rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    <option value="created_at">Data de Criação</option>
+                    <option value="updated_at">Última Atualização</option>
+                    <option value="lead_score">Pontuação</option>
+                    <option value="name">Nome</option>
+                    <option value="email">Email</option>
+                  </select>
+                </div>
+                
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="order_direction" className="form-label">Direção</label>
+                  <select
+                    className="form-select"
+                    id="order_direction"
+                    value={currentFilters.order_direction || 'desc'}
+                    onChange={(e) => updateFilters({ order_direction: e.target.value })}
+                    style={{ 
+                      borderRadius: '8px', 
+                      padding: '0.6rem 1rem',
+                      borderColor: 'rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    <option value="desc">Decrescente</option>
+                    <option value="asc">Crescente</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Active filters display */}
@@ -359,8 +474,31 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({ onFilterChange, currentFilt
             borderRadius: '8px'
           }}>
             <div className="d-flex gap-2 flex-wrap">
-              {Object.entries(currentFilters).map(([key, value]) => (
-                value && (
+              {Object.entries(currentFilters).map(([key, value]) => {
+                // Skip min_score and max_score if score_filter is set
+                if ((key === 'min_score' || key === 'max_score') && currentFilters.score_filter) {
+                  return null;
+                }
+                
+                const label = 
+                  key === 'search' ? `Busca: ${value}` :
+                  key === 'company_id' ? `Empresa: ${companies.find(c => c.id === value)?.name || value}` :
+                  key === 'project_id' ? `Projeto: ${projects.find(p => p.id === value)?.name || value}` :
+                  key === 'utm_source' ? `Origem: ${value}` :
+                  key === 'utm_medium' ? `Meio: ${value}` :
+                  key === 'utm_campaign' ? `Campanha: ${value}` :
+                  key === 'score_filter' ? (value === '100' ? 'Pontuação: Apenas 100' : `Pontuação: Acima de ${value}`) :
+                  key === 'order_by' ? `Ordenar: ${
+                    value === 'created_at' ? 'Data Criação' :
+                    value === 'updated_at' ? 'Última Atualização' :
+                    value === 'lead_score' ? 'Pontuação' :
+                    value === 'name' ? 'Nome' :
+                    value === 'email' ? 'Email' : value
+                  }` :
+                  key === 'order_direction' ? `Direção: ${value === 'asc' ? 'Crescente' : 'Decrescente'}` :
+                  `${key}: ${value}`;
+                
+                return value && label ? (
                   <div 
                     key={key} 
                     className="badge d-flex align-items-center gap-1"
@@ -372,29 +510,26 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({ onFilterChange, currentFilt
                       borderRadius: '6px'
                     }}
                   >
-                    {
-                      key === 'search' ? `Busca: ${value}` :
-                      key === 'company_id' ? `Empresa: ${companies.find(c => c.id === value)?.name || value}` :
-                      key === 'project_id' ? `Projeto: ${projects.find(p => p.id === value)?.name || value}` :
-                      key === 'utm_source' ? `Origem: ${value}` :
-                      key === 'utm_medium' ? `Meio: ${value}` :
-                      key === 'utm_campaign' ? `Campanha: ${value}` :
-                      `${key}: ${value}`
-                    }
+                    {label}
                     <button 
                       className="btn btn-sm p-0 ps-1" 
                       style={{ fontSize: '0.8em', color: '#7e57c2' }}
                       onClick={() => {
                         const newFilters = { ...currentFilters };
                         delete newFilters[key];
+                        // If removing score_filter, also remove min/max scores
+                        if (key === 'score_filter') {
+                          delete newFilters.min_score;
+                          delete newFilters.max_score;
+                        }
                         updateFilters(newFilters);
                       }}
                     >
                       <i className="bi bi-x-circle"></i>
                     </button>
                   </div>
-                )
-              ))}
+                ) : null;
+              })}
             </div>
           </div>
         )}

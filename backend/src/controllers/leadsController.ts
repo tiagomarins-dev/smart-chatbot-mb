@@ -14,6 +14,10 @@ export async function getLeads(req: Request, res: Response): Promise<void> {
     const leadId = req.query.id as string;
     const projectId = req.query.project_id as string;
     const email = req.query.email as string;
+    const minScore = req.query.min_score ? parseInt(req.query.min_score as string) : undefined;
+    const maxScore = req.query.max_score ? parseInt(req.query.max_score as string) : undefined;
+    const orderBy = req.query.order_by as string || 'created_at';
+    const orderDirection = req.query.order_direction as string || 'desc';
 
     console.log('Obtendo leads para usuário:', userId);
 
@@ -147,12 +151,25 @@ export async function getLeads(req: Request, res: Response): Promise<void> {
       filters.push({ column: 'email', operator: 'eq', value: email });
     }
 
+    // Add lead score filters
+    if (minScore !== undefined) {
+      filters.push({ column: 'lead_score', operator: 'gte', value: minScore });
+    }
+
+    if (maxScore !== undefined) {
+      filters.push({ column: 'lead_score', operator: 'lte', value: maxScore });
+    }
+
+    // Build order object based on orderBy parameter
+    const order: Record<string, 'asc' | 'desc'> = {};
+    order[orderBy] = orderDirection as 'asc' | 'desc';
+
     // Query database for leads
     const leads = await executeQuery<Lead>({
       table: 'leads',
-      select: 'id, name, first_name, email, phone, status, notes, created_at, updated_at',
+      select: 'id, name, first_name, email, phone, status, notes, created_at, updated_at, lead_score, sentiment_status, ai_analysis',
       filters,
-      order: { created_at: 'desc' }
+      order
     });
 
     // If filtered by project, further filter the leads
@@ -2286,6 +2303,10 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
       utm_campaign,
       date_from,
       date_to,
+      min_score,
+      max_score,
+      order_by = 'created_at',
+      order_direction = 'desc',
       limit = 50,
       offset = 0
     } = req.query;
@@ -2563,10 +2584,31 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
         notes,
         created_at,
         updated_at,
-        company_id
+        lead_score,
+        sentiment_status,
+        ai_analysis
       `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .eq('user_id', userId);
+
+    // Apply lead score filters
+    if (min_score !== undefined) {
+      const minScoreNum = parseInt(min_score as string);
+      if (!isNaN(minScoreNum)) {
+        leadsQuery = leadsQuery.gte('lead_score', minScoreNum);
+      }
+    }
+
+    if (max_score !== undefined) {
+      const maxScoreNum = parseInt(max_score as string);
+      if (!isNaN(maxScoreNum)) {
+        leadsQuery = leadsQuery.lte('lead_score', maxScoreNum);
+      }
+    }
+
+    // Apply ordering
+    const orderColumn = order_by as string || 'created_at';
+    const isAscending = order_direction === 'asc';
+    leadsQuery = leadsQuery.order(orderColumn, { ascending: isAscending });
 
     // Apply date filters if provided
     if (date_from) {
@@ -2582,10 +2624,8 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
       leadsQuery = leadsQuery.eq('status', status);
     }
 
-    // Apply company filter if provided
-    if (company_id) {
-      leadsQuery = leadsQuery.eq('company_id', company_id);
-    }
+    // Company filter would need to be applied via lead_project join
+    // Skipping direct company filter since leads table doesn't have company_id
 
     // Apply search term if provided (search in name, email, and phone)
     if (search) {
@@ -2621,7 +2661,11 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
           utm_medium,
           utm_campaign,
           date_from,
-          date_to
+          date_to,
+          min_score,
+          max_score,
+          order_by,
+          order_direction
         }
       });
       return;
@@ -2695,7 +2739,11 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
           utm_medium,
           utm_campaign,
           date_from,
-          date_to
+          date_to,
+          min_score,
+          max_score,
+          order_by,
+          order_direction
         }
       });
       return;
@@ -2730,7 +2778,9 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
         notes: lead.notes,
         created_at: lead.created_at,
         updated_at: lead.updated_at,
-        company_id: lead.company_id,
+        lead_score: lead.lead_score,
+        sentiment_status: lead.sentiment_status,
+        ai_analysis: lead.ai_analysis,
         project_id: leadProject?.project_id,
         utm_source: leadProject?.utm_source,
         utm_medium: leadProject?.utm_medium,
@@ -2756,7 +2806,11 @@ export async function searchLeads(req: Request, res: Response): Promise<void> {
         utm_medium,
         utm_campaign,
         date_from,
-        date_to
+        date_to,
+        min_score,
+        max_score,
+        order_by,
+        order_direction
       }
     });
   } catch (error) {

@@ -25,14 +25,24 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
     const fetchLeads = async () => {
       try {
         setLoading(true);
-        const queryParams: Record<string, any> = {};
         
-        // Add project_id filter if it exists
-        if (filters.project_id) {
-          queryParams.project_id = filters.project_id;
+        // Check if we need to use search API (when we have filters)
+        const hasFilters = filters.min_score || filters.max_score || filters.order_by || 
+                         filters.company_id || filters.utm_source || filters.utm_medium || 
+                         filters.utm_campaign || filters.search;
+        
+        let response;
+        if (hasFilters || filters.project_id) {
+          // Use search API for filtered results
+          console.log('Using search API with filters:', filters);
+          response = await leadsApi.searchLeads(filters);
+        } else {
+          // Use simple API for all leads
+          console.log('Using simple API');
+          response = await leadsApi.getLeads();
         }
         
-        const response = await leadsApi.getLeads(queryParams);
+        console.log('API Response:', response);
         
         if (response.success && response.data?.leads) {
           setLeads(response.data.leads);
@@ -48,46 +58,12 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
     };
 
     fetchLeads();
-  }, [filters.project_id]);
+  }, [filters]);
   
-  // Apply client-side filters
+  // No need for client-side filters anymore - API handles it
   useEffect(() => {
-    let result = [...leads];
-    
-    // Filter by company_id - this requires checking the lead's projects
-    if (filters.company_id) {
-      result = result.filter(lead => {
-        // This is a simplified approach - in a real app, you might need to check lead_project table
-        // This assumes leads have a company_id field or that you've already joined the data
-        return lead.company_id === filters.company_id;
-      });
-    }
-    
-    // Filter by search term (name, email, phone)
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(lead => 
-        (lead.name && lead.name.toLowerCase().includes(searchLower)) ||
-        (lead.email && lead.email.toLowerCase().includes(searchLower)) ||
-        (lead.phone && lead.phone.includes(filters.search))
-      );
-    }
-    
-    // Filter by UTM parameters
-    if (filters.utm_source) {
-      result = result.filter(lead => lead.utm_source === filters.utm_source);
-    }
-    
-    if (filters.utm_medium) {
-      result = result.filter(lead => lead.utm_medium === filters.utm_medium);
-    }
-    
-    if (filters.utm_campaign) {
-      result = result.filter(lead => lead.utm_campaign === filters.utm_campaign);
-    }
-    
-    setFilteredLeads(result);
-  }, [leads, filters]);
+    setFilteredLeads(leads);
+  }, [leads]);
   
   // Set up real-time updates when connection is established
   useEffect(() => {
@@ -230,12 +206,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
     );
   }
   
-  // Sort leads by creation date (newest first)
-  const sortedLeads = [...filteredLeads].sort((a, b) => {
-    if (!a.created_at) return 1;
-    if (!b.created_at) return -1;
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  // No need to sort - API already handles ordering
+  const sortedLeads = filteredLeads;
 
   // Helper function to get badge color based on status
   const getStatusBadgeColor = (status: Lead['status']) => {
@@ -464,33 +436,25 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
                     )}
                   </td>
                   <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
-                    {lead.lead_score ? (
-                      <div
-                        className="progress"
+                    {lead.lead_score !== null && lead.lead_score !== undefined ? (
+                      <span 
+                        className="badge"
                         style={{
-                          height: '8px',
-                          width: '100%',
-                          maxWidth: '80px',
-                          backgroundColor: '#e0e0e0'
+                          backgroundColor: lead.lead_score >= 80 ? '#4caf50' :
+                                         lead.lead_score >= 60 ? '#2196f3' :
+                                         lead.lead_score >= 40 ? '#ff9800' : '#f44336',
+                          color: 'white',
+                          padding: '0.4em 0.8em',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          borderRadius: '6px',
+                          minWidth: '45px',
+                          display: 'inline-block',
+                          textAlign: 'center'
                         }}
                       >
-                        <div
-                          className="progress-bar"
-                          role="progressbar"
-                          style={{
-                            width: `${lead.lead_score}%`,
-                            backgroundColor: lead.lead_score >= 80 ? '#4caf50' :
-                                            lead.lead_score >= 60 ? '#2196f3' :
-                                            lead.lead_score >= 40 ? '#ff9800' : '#f44336'
-                          }}
-                          aria-valuenow={lead.lead_score}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          data-bs-toggle="tooltip"
-                          data-bs-placement="top"
-                          title={`Score: ${lead.lead_score}/100`}
-                        />
-                      </div>
+                        {lead.lead_score}
+                      </span>
                     ) : (
                       <span className="text-muted small">—</span>
                     )}
