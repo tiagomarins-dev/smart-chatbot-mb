@@ -420,9 +420,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
                   <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
                     {lead.sentiment_status ? (
                       <span
-                        className="badge"
+                        className={`badge ${getSentimentBadgeColor(lead.sentiment_status)}`}
                         style={{
-                          backgroundColor: getSentimentBadgeColor(lead.sentiment_status),
                           padding: '0.4em 0.7em',
                           fontWeight: 500,
                           borderRadius: '6px',
