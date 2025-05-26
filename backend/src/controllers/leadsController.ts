@@ -643,18 +643,30 @@ export async function captureLead(req: Request, res: Response): Promise<void> {
       leadId = newLead.id!;
     }
 
-    // Create lead-project association
-    const leadProject: LeadProject = {
-      lead_id: leadId,
-      project_id: data.project_id,
-      utm_source: data.utm_source,
-      utm_medium: data.utm_medium,
-      utm_campaign: data.utm_campaign,
-      utm_term: data.utm_term,
-      utm_content: data.utm_content
-    };
+    // Check if lead-project association already exists
+    const existingAssociations = await executeQuery<LeadProject>({
+      table: 'lead_project',
+      select: 'lead_id',
+      filters: [
+        { column: 'lead_id', operator: 'eq', value: leadId },
+        { column: 'project_id', operator: 'eq', value: data.project_id }
+      ]
+    });
 
-    await insertData<LeadProject>('lead_project', leadProject);
+    if (existingAssociations.length === 0) {
+      // Create lead-project association only if it doesn't exist
+      const leadProject: LeadProject = {
+        lead_id: leadId,
+        project_id: data.project_id,
+        utm_source: data.utm_source,
+        utm_medium: data.utm_medium,
+        utm_campaign: data.utm_campaign,
+        utm_term: data.utm_term,
+        utm_content: data.utm_content
+      };
+
+      await insertData<LeadProject>('lead_project', leadProject);
+    }
 
     // Get full lead details
     const lead = await executeQuery<Lead>({
@@ -667,9 +679,18 @@ export async function captureLead(req: Request, res: Response): Promise<void> {
     });
 
     // Prepare response
+    let message = 'Lead captured successfully';
+    if (existingLead && existingAssociations.length > 0) {
+      message = 'Lead already exists and is already associated with this project';
+    } else if (existingLead) {
+      message = 'Lead already exists, now associated with this project';
+    }
+
     const responseData = {
       lead: lead[0],
-      message: existingLead ? 'Lead already exists, associated with project' : 'Lead captured successfully',
+      message,
+      lead_existed: existingLead,
+      association_existed: existingAssociations.length > 0,
       details: {
         name: data.name,
         project: projectName,
@@ -677,7 +698,8 @@ export async function captureLead(req: Request, res: Response): Promise<void> {
       }
     };
 
-    sendSuccess(res, responseData, HttpStatus.CREATED);
+    // Return 200 if lead existed, 201 if new lead was created
+    sendSuccess(res, responseData, existingLead ? HttpStatus.OK : HttpStatus.CREATED);
   } catch (error) {
     console.error('Error capturing lead:', error);
     sendError(res, error, HttpStatus.INTERNAL_SERVER_ERROR);
