@@ -267,9 +267,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
     <div className="card" style={{ 
       borderRadius: '12px', 
       boxShadow: '0 6px 16px rgba(0, 0, 0, 0.07)',
-      border: 'none',
-      animation: 'slideInUp 0.5s ease-out',
-      animationDelay: '0.3s'
+      border: 'none'
     }}>
       <div className="card-header" style={{ 
         backgroundColor: 'transparent',
@@ -341,15 +339,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ filters = {} }) => {
             </thead>
             <tbody>
               {sortedLeads.map((lead) => (
-                <tr key={lead.id} style={{ 
-                  transition: 'transform 0.2s ease, background-color 0.2s ease',
-                  borderLeft: '3px solid transparent',
-                  ':hover': {
-                    transform: 'translateX(3px)',
-                    borderLeft: '3px solid #7e57c2',
-                    backgroundColor: 'rgba(126, 87, 194, 0.03)'
-                  }
-                }}>
+                <tr key={lead.id}>
                   <td style={{ padding: '0.9rem 1.25rem', verticalAlign: 'middle' }}>
                     <Link href={`/leads/${lead.id}`} style={{ 
                       color: '#673ab7', 

@@ -126,9 +126,7 @@ const LeadsFilters: React.FC<LeadsFiltersProps> = ({ onFilterChange, currentFilt
     <div className="card mb-4" style={{ 
       borderRadius: '12px', 
       boxShadow: '0 6px 16px rgba(0, 0, 0, 0.07)',
-      border: 'none',
-      animation: 'slideInUp 0.5s ease-out',
-      animationDelay: '0.1s'
+      border: 'none'
     }}>
       <div className="card-header" style={{
         backgroundColor: 'transparent',
