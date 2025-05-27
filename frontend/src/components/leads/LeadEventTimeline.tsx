@@ -7,11 +7,6 @@ interface LeadEventTimelineProps {
 }
 
 const LeadEventTimeline: React.FC<LeadEventTimelineProps> = ({ events, loading }) => {
-  // Helper function to format timestamp
-  const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('pt-BR');
-  };
 
   // Function to format date for grouping
   const formatDateGroup = (date: Date) => {
@@ -282,6 +277,50 @@ const LeadEventTimeline: React.FC<LeadEventTimelineProps> = ({ events, loading }
                             <span className="badge" style={{ backgroundColor: bgColor, color: color, fontWeight: 'normal' }}>
                               {event.origin}
                             </span>
+                          </div>
+                        )}
+                        
+                        {/* Display additional event data if present */}
+                        {event.event_data && Object.keys(event.event_data).length > 0 && (
+                          <div className="mt-3 p-3 rounded" style={{ backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
+                            <h6 className="small text-muted mb-2">Dados do Evento:</h6>
+                            <div className="small">
+                              {Object.entries(event.event_data).map(([key, value]) => {
+                                // Skip keys that are already displayed in the description
+                                if (['message', 'content', 'subject', 'old_status', 'new_status', 'duration', 'page_url', 'form_name'].includes(key)) {
+                                  return null;
+                                }
+                                
+                                // Format the key to be more readable
+                                const formattedKey = key
+                                  .split('_')
+                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                  .join(' ');
+                                
+                                // Format the value
+                                let formattedValue = value;
+                                if (typeof value === 'object' && value !== null) {
+                                  formattedValue = JSON.stringify(value, null, 2);
+                                } else if (typeof value === 'boolean') {
+                                  formattedValue = value ? 'Sim' : 'Não';
+                                } else if (value === null || value === undefined) {
+                                  formattedValue = '-';
+                                }
+                                
+                                return (
+                                  <div key={key} className="mb-1">
+                                    <span className="text-muted">{formattedKey}:</span>{' '}
+                                    <span className="text-dark">
+                                      {typeof value === 'object' ? (
+                                        <pre className="mb-0 mt-1" style={{ fontSize: '0.875rem' }}>{formattedValue}</pre>
+                                      ) : (
+                                        formattedValue
+                                      )}
+                                    </span>
+                                  </div>
+                                );
+                              }).filter(Boolean)}
+                            </div>
                           </div>
                         )}
                       </div>
