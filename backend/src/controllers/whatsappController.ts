@@ -8,7 +8,9 @@ import axios from 'axios';
 
 // URL base para a API WhatsApp
 // Sempre usar a porta 9029 para conexão ao WhatsApp, independente do ambiente
-const WHATSAPP_API_URL = 'http://localhost:9029/api/whatsapp';
+// Se estiver rodando no Docker, usar host.docker.internal
+const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 
+  (process.env.DOCKER_ENV ? 'http://host.docker.internal:9029/api/whatsapp' : 'http://localhost:9029/api/whatsapp');
 
 // Configurar axios para não validar certificados e aumentar o timeout
 const whatsappAxios = axios.create({
@@ -91,24 +93,24 @@ export async function getStatus(req: Request, res: Response): Promise<void> {
       }
     }
     
-    // Fallback - resposta fixa para manter a UI funcionando
-    console.log('Fallback to default connected status');
+    // Fallback - resposta padrão desconectado
+    console.log('Fallback to default disconnected status');
     sendSuccess(res, {
-      status: 'connected',
+      status: 'disconnected',
       qrCode: null,
-      authenticated: true,
-      phoneNumber: '5521987868395',
+      authenticated: false,
+      phoneNumber: null,
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
     console.error('Error getting WhatsApp status:', error.message);
     
-    // Em caso de erro, ainda retornar um status conectado, pois sabemos que o serviço está funcionando
+    // Em caso de erro, retornar status desconectado
     sendSuccess(res, {
-      status: 'connected',
+      status: 'disconnected',
       qrCode: null,
-      authenticated: true,
-      phoneNumber: '5521987868395',
+      authenticated: false,
+      phoneNumber: null,
       timestamp: new Date().toISOString()
     });
   }
@@ -177,7 +179,9 @@ export async function getQRCodePlain(req: Request, res: Response): Promise<void>
  */
 export async function connect(req: Request, res: Response): Promise<void> {
   try {
-    // Check if already connected
+    // A API WhatsApp não tem endpoint /connect
+    // A conexão é iniciada automaticamente quando geramos um QR code
+    // Vamos apenas verificar o status e retornar
     const statusResponse = await whatsappAxios.get(`${WHATSAPP_API_URL}/status`);
     
     if (statusResponse.data.status === 'connected') {
@@ -189,17 +193,20 @@ export async function connect(req: Request, res: Response): Promise<void> {
       return;
     }
     
-    // Initiate connection process
-    const response = await whatsappAxios.post(`${WHATSAPP_API_URL}/connect`);
-    
+    // Se não está conectado, a API vai gerar um QR code automaticamente
     sendSuccess(res, {
       success: true,
-      status: response.data.status || 'connecting',
-      message: 'Connection initiated, QR code may be available'
+      status: statusResponse.data.status || 'disconnected',
+      message: 'Check status to get QR code'
     });
   } catch (error: any) {
-    console.error('Error connecting to WhatsApp:', error.message);
-    sendError(res, 'Failed to connect to WhatsApp', HttpStatus.INTERNAL_SERVER_ERROR);
+    console.error('Error in connect handler:', error.message);
+    // Em caso de erro, retornar status desconectado
+    sendSuccess(res, {
+      success: true,
+      status: 'disconnected',
+      message: 'Connection will be initiated when QR code is requested'
+    });
   }
 }
 

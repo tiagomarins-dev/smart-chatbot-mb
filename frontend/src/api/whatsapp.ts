@@ -2,7 +2,10 @@ import apiClient from './client';
 import { ApiResponse } from '../interfaces';
 
 interface WhatsAppStatus {
-  status: 'disconnected' | 'initializing' | 'qr_received' | 'authenticated' | 'connected' | 'error';
+  status: 'disconnected' | 'initializing' | 'qr_received' | 'authenticated' | 'connected' | 'connecting' | 'error';
+  authenticated?: boolean;
+  phoneNumber?: string | null;
+  qrCode?: string | null;
   timestamp: string;
 }
 
@@ -38,10 +41,10 @@ interface ContactMessagesResponse {
   messages: Message[];
 }
 
-// API WhatsApp - sempre apontando para a porta 9029
+// API Backend - sempre passar pelo backend, não acessar diretamente a API WhatsApp
 const getApiBaseUrl = (): string => {
-  // Sempre apontar para localhost:9029, independente do ambiente
-  return 'http://localhost:9029/api/whatsapp';
+  // Usar o backend como proxy para a API WhatsApp
+  return 'http://localhost:9033/api/whatsapp';
 };
 
 interface PhoneResponse {
@@ -88,12 +91,14 @@ export const whatsappApi = {
       }
       
       // Extrair dados da resposta seguindo a estrutura do backend
-      // Nota: A API retorna diretamente {status, qrCode, phoneNumber} sem estar dentro de um campo "data"
+      // O backend retorna {success: true, data: {...}, statusCode: 200}
+      const backendData = json.data || json;
       const statusData: WhatsAppStatus = {
-        status: json.status || 'disconnected',
-        authenticated: json.status === 'connected',
-        phoneNumber: json.phoneNumber || null,
-        timestamp: json.timestamp || new Date().toISOString()
+        status: backendData.status || 'disconnected',
+        authenticated: backendData.authenticated || false,
+        phoneNumber: backendData.phoneNumber || null,
+        qrCode: backendData.qrCode || null,
+        timestamp: backendData.timestamp || new Date().toISOString()
       };
       
       console.log('Extracted WhatsApp status data:', statusData);
@@ -147,35 +152,14 @@ export const whatsappApi = {
    * Connect to WhatsApp
    */
   connect: async (): Promise<ApiResponse<ConnectResponse>> => {
-    try {
-      const apiUrl = getApiBaseUrl();
-      const response = await fetch(`${apiUrl}/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const json = await response.json();
-      if (!response.ok) {
-        return {
-          success: false,
-          error: json.error || 'Erro ao conectar WhatsApp',
-          statusCode: response.status
-        };
-      }
-      return {
-        success: true,
-        data: json.data as ConnectResponse,
-        statusCode: json.statusCode
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Erro ao conectar WhatsApp',
-        statusCode: 500
-      };
-    }
+    // A API WhatsApp não tem endpoint /connect
+    // A conexão é iniciada automaticamente quando acessamos o status
+    // Vamos apenas retornar sucesso e deixar o status atualizar
+    return {
+      success: true,
+      data: { status: 'connecting' },
+      statusCode: 200
+    };
   },
 
   /**

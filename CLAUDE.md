@@ -12,7 +12,7 @@ Smart-ChatBox is a multi-service WhatsApp CRM system with AI-powered lead manage
 - **Backend API** (Node.js/Express): Port 9033
 - **Frontend** (Next.js): Port 9034  
 - **AI Service** (Python/FastAPI): Port 8050 (development) / Port 9035 (Docker)
-- **WhatsApp Service**: Integrated with backend
+- **WhatsApp API**: External service (runs separately, not part of this project)
 - **Database**: Supabase PostgreSQL
 - **Redis Cache**: Port 9036 (for AI service)
 
@@ -131,6 +131,12 @@ SUPABASE_JWT_SECRET=[jwt-secret]
 JWT_SECRET=[custom-jwt-secret]
 AI_SERVICE_URL=http://localhost:9035  # or http://ai-service:8050 in Docker
 AI_SERVICE_KEY=[optional-api-key]
+SUPABASE_OFFLINE_MODE=false  # Set to true for mock data
+```
+
+#### Frontend (.env.local)
+```
+NEXT_PUBLIC_API_URL=http://localhost:9033/api
 ```
 
 #### AI Service (.env)
@@ -164,11 +170,12 @@ REDIS_URL=redis://localhost:9036
 6. **Logging**: Save analysis results to `lead_ai_analysis_logs`
 
 ### WhatsApp Integration
-1. **Connection**: QR code scanning creates persistent session
-2. **Message Reception**: Webhook receives messages
-3. **Storage**: Messages saved to `whatsapp_conversations`
-4. **Smart Chatbot**: Analyzes messages and auto-responds to common questions
-5. **Lead Association**: Messages linked to leads via phone number
+1. **External API**: WhatsApp runs as a separate service (not in Docker)
+2. **Backend Integration**: Communicates via HTTP requests to WhatsApp API
+3. **Message Flow**: WhatsApp API → Backend webhook → Database storage
+4. **Storage**: Messages saved to `whatsapp_conversations` table
+5. **Smart Chatbot**: Backend analyzes messages and sends responses via WhatsApp API
+6. **Lead Association**: Messages linked to leads via phone number matching
 
 ## Key Database Operations
 
@@ -263,12 +270,95 @@ curl -X POST http://localhost:9035/v1/analyze-lead \
 - **Supabase Realtime**: Database change notifications
 - **Frontend Updates**: React components with real-time data
 
+## Testing Approach
+
+### Backend Testing
+```bash
+# Run all tests
+cd backend && npm test
+
+# Test with coverage
+npm test -- --coverage
+
+# Test specific controller
+npm test -- controllers/leadsController.test.ts
+
+# Run specific test by name pattern
+npm test -- --testNamePattern="should create a new lead"
+```
+
+### Frontend Testing
+```bash
+# No test script configured - use manual testing
+# Run development server and test features
+cd frontend && npm run dev
+```
+
+### AI Service Testing
+```bash
+# Run all tests
+cd ai-service && pytest
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+
+# Test specific file
+pytest app/tests/test_api.py
+
+# Test specific function
+pytest -k "test_analyze_lead"
+```
+
+### Integration Testing
+```bash
+# Test authentication flow
+curl -X POST http://localhost:9033/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password"}'
+
+# Test lead analysis
+curl -X POST http://localhost:9033/api/leads/{id}/analyze \
+  -H "Authorization: Bearer {token}"
+
+# Test AI service
+curl -X POST http://localhost:9035/v1/analyze-lead \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {api-key}" \
+  -d @test_lead.json
+```
+
+## Key Features Implementation
+
+### AI-Powered Lead Analysis
+- **Endpoint**: `POST /api/leads/:id/analyze`
+- **Automatic Triggers**: On new lead events via `leadEventsController`
+- **Sentiment Categories**: interessado, sem interesse, compra futura, achou caro, quer desconto, parcelamento, indeterminado
+- **Lead Scoring**: 0-100 based on engagement and intent
+- **High-Intent Events**: abandoned_cart (75+), clicked_payment_link (70+)
+
+### WhatsApp Smart Chatbot
+- **Auto-responds** to common project questions (price, location, delivery date)
+- **Project Detection**: Matches project names in messages
+- **Response Categories**: Price, delivery, location, size/layout, general info
+- **Conversation Tracking**: All messages stored with timestamps and analysis
+
+### Automated Messaging System
+- **Event-based Triggers**: Lead creation, status change, custom events
+- **Template Management**: Create and manage message templates
+- **Personalization**: Dynamic content based on lead data
+- **Scheduling**: Time-based message delivery
+
+### Real-time Features
+- **WebSocket Server**: For live updates (port 9033)
+- **Supabase Realtime**: Database change notifications
+- **Frontend Updates**: React components with real-time data
+
 ## Development Workflow
 
 1. **Feature Development**: 
    - Create feature branch from main
    - Update tests for new functionality
-   - Run linting before commits
+   - Run linting before commits (backend only: `npm run lint`)
 
 2. **Database Changes**:
    - Create migration file in `supabase/migrations/`
@@ -293,5 +383,9 @@ curl -X POST http://localhost:9035/v1/analyze-lead \
 - **Error Handling**: Always use try-catch with proper error responses
 - **Offline Mode**: Set `SUPABASE_OFFLINE_MODE=true` for mock data
 - **Lead Analysis Logs**: All AI analyses are logged in `lead_ai_analysis_logs`
-- **WhatsApp Session**: Persists in Docker volume `wa_sessions`
+- **WhatsApp API**: External service - do NOT include in Docker or install dependencies
 - **Frontend Build**: .next directory should not be committed to Git
+- **Frontend Linting**: No ESLint configured - ensure code quality manually
+- **Test Setup**: Backend uses Jest with ts-jest, mocks in `src/__mocks__`
+- **Jest Config**: Tests run from `src/` directory, coverage excludes mocks and index files
+- **Important**: See IMPORTANT_NOTES.md for critical architecture decisions

@@ -4,19 +4,20 @@ import Layout from '../../src/components/layout/Layout';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import whatsappApi from '../../src/api/whatsapp';
+import QRCode from 'qrcode';
 
 const WhatsAppPage: NextPage = () => {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   
   // Estado da página
-  const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'initializing' | 'qr_received' | 'authenticated' | 'error'>('disconnected');
   const [authenticated, setAuthenticated] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [recipient, setRecipient] = useState('');
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -24,6 +25,11 @@ const WhatsAppPage: NextPage = () => {
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   
+  // Definir lastUpdated apenas no cliente para evitar problemas de hidratação
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, []);
+
   useEffect(() => {
     console.log("Auth status:", { loading, isAuthenticated });
     fetchStatus();
@@ -52,6 +58,12 @@ const WhatsAppPage: NextPage = () => {
 
   // Função de formatação de data
   const formatDateTime = (date: Date) => {
+    // Evitar problemas de hidratação usando uma formatação consistente
+    if (typeof window === 'undefined') {
+      // No servidor, retornar string vazia
+      return '';
+    }
+    // No cliente, formatar normalmente
     return date.toLocaleString('pt-BR', { 
       day: '2-digit', 
       month: '2-digit', 
@@ -84,11 +96,22 @@ const WhatsAppPage: NextPage = () => {
         if (result.data.authenticated) {
           // Buscar mensagens se estiver autenticado
           fetchMessages();
-        }
-        
-        if (result.data.status === 'connecting' && !result.data.authenticated) {
-          // Se estiver conectando e não autenticado, buscar QR code
-          fetchQRCode();
+          // Limpar QR code se estiver autenticado
+          setQrCode(null);
+        } else {
+          // Se houver QR code no status, converter para imagem
+          if (result.data.qrCode) {
+            try {
+              const qrCodeDataUrl = await QRCode.toDataURL(result.data.qrCode);
+              setQrCode(qrCodeDataUrl);
+            } catch (qrError) {
+              console.error("Error generating QR code image:", qrError);
+              setQrCode(result.data.qrCode); // Fallback para string
+            }
+          } else if (!qrCode && (result.data.status === 'disconnected' || result.data.status === 'connecting')) {
+            // Se não temos QR code e está desconectado/conectando, buscar QR code
+            fetchQRCode();
+          }
         }
       }
     } catch (err) {
@@ -104,7 +127,15 @@ const WhatsAppPage: NextPage = () => {
     try {
       const result = await whatsappApi.getQRCode();
       if (result.success && result.data?.qrcode) {
-        setQrCode(result.data.qrcode);
+        // Converter string do QR code em imagem data URL
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(result.data.qrcode);
+          setQrCode(qrCodeDataUrl);
+        } catch (qrError) {
+          console.error("Error generating QR code image:", qrError);
+          // Se falhar, salvar a string para mostrar em texto
+          setQrCode(result.data.qrcode);
+        }
       }
     } catch (err) {
       console.error("Error fetching QR code:", err);
@@ -130,9 +161,10 @@ const WhatsAppPage: NextPage = () => {
       setStatusMessage('Iniciando conexão...');
       const result = await whatsappApi.connect();
       if (result.success) {
-        setStatus('connecting');
-        setStatusMessage('Conexão iniciada. Aguardando QR code...');
-        setTimeout(fetchStatus, 1000);
+        // Não mudar o status aqui, deixar o fetchStatus fazer isso
+        setStatusMessage('Buscando QR code...');
+        // Buscar status imediatamente para obter o QR code
+        await fetchStatus();
       } else {
         setError(result.error || 'Erro ao conectar WhatsApp');
       }
@@ -501,7 +533,7 @@ const WhatsAppPage: NextPage = () => {
                       </div>
                     </div>
                     
-                    {status === 'connecting' && qrCode && (
+                    {((status === 'disconnected' || status === 'connecting') && qrCode) && (
                       <div className="card mb-3" style={{ 
                         borderRadius: '12px', 
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', 
@@ -642,8 +674,8 @@ const WhatsAppPage: NextPage = () => {
                             <i className="bi bi-bell me-1"></i> Novas mensagens
                           </span>
                         )}
-                        {messages.length > 0 && 
-                          <small className="text-muted ms-2">Última atualização: {formatDateTime(new Date())}</small>
+                        {messages.length > 0 && lastUpdated && 
+                          <small className="text-muted ms-2">Última atualização: {formatDateTime(lastUpdated)}</small>
                         }
                       </div>
                       <div>
@@ -706,12 +738,7 @@ const WhatsAppPage: NextPage = () => {
                                 </div>
                                 <div className="message-footer mt-1">
                                   <small className={isOutgoing ? 'text-white-50' : 'text-muted'}>
-                                    {new Date(msg.timestamp).toLocaleString('pt-BR', {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
+                                    {msg.timestamp ? formatDateTime(new Date(msg.timestamp)) : ''}
                                   </small>
                                 </div>
                               </div>

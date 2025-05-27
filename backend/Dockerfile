@@ -3,6 +3,7 @@ FROM node:18-alpine
 WORKDIR /usr/src/app
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV DOCKER_ENV=true
 
 # Install dependencies
 COPY package*.json ./
